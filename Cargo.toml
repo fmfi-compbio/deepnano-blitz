@@ -1,0 +1,21 @@
+[package]
+name = "deepnano2"
+version = "0.1.0"
+authors = ["Vlado Boza <bozavlado@gmail.com>"]
+edition = "2018"
+#build = "build.rs"
+
+[lib]
+name = "deepnano2"
+crate-type = ["cdylib"]
+
+[dependencies]
+ndarray = { version = "0.13.0", features = ["blas"] }
+#intel-mkl-src = { version = "0.5" }
+libc = "0.2.29"
+kth = "0.1.0"
+pyo3 = { version = "0.8.5", features = ["extension-module"] }
+
+[profile.release]
+lto=true
+codegen-units=1
