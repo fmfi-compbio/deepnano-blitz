@@ -31,7 +31,7 @@ def call_file(filename):
             signal = read.get_raw_data()
             signal = rescale_signal(signal)
 
-            out.append((read_id, deepnano2.call_raw_signal(signal)))
+            out.append((read_id, caller.call_raw_signal(signal)))
     return out
 
 if __name__ == '__main__':
@@ -41,6 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('--reads', type=str, nargs='*', help='One or more read files')
     parser.add_argument("--output", type=str, required=True, help="Output FASTA file name")
     parser.add_argument("--threads", type=int, default=1, help="Number of threads for basecalling")
+    parser.add_argument("--weights", type=str, default=None, help="Path to network weights")
 
     args = parser.parse_args()
 
@@ -54,6 +55,13 @@ if __name__ == '__main__':
     if len(files) == 0:
         print("Zero input reads, nothing to do.")
         sys.exit()
+
+    if args.weights is None:
+        weights = os.path.join(deepnano2.__path__[0], "weights", "weightsn460.txt")
+    else:
+        weights = args.weights
+
+    caller = deepnano2.Caller(weights)
 
     fout = open(args.output, "w")
 

@@ -139,76 +139,90 @@ impl Net {
     }
 }
 
-thread_local!(static NET: RefCell<Net> = RefCell::new(Net::new("weights/weightsn460.txt").unwrap()));
+#[pyclass]
+struct Caller {
+    net: Net
+}
 
-#[pyfunction]
-fn call_raw_signal(raw_data: Vec<f32>) -> String {
-    unsafe {
-      if JITTER48 == ptr::null_mut() {
-        initialize_jit();
-      }
-    }
-    let mut start_pos = 0;
-
-    let mut to_stack = Vec::new();
-
-    while start_pos + STEP * 3 + PAD * 6 < raw_data.len() {
-        let chunk = &raw_data[start_pos..(start_pos + STEP * 3 + PAD * 6).min(raw_data.len())];
-        let out = NET.with(|net| net.borrow_mut().predict(chunk));
-
-        let slice_start_pos = if start_pos == 0 {
-            0
-        } else {
-            (PAD).min(out.shape()[0])
-        };
-        let slice_end_pos = if start_pos + 3 * STEP + 6 * PAD >= raw_data.len() {
-            out.shape()[0]
-        } else {
-            out.shape()[0] - PAD
-        };
-
-        to_stack.push(out.slice(s![slice_start_pos..slice_end_pos, ..]).to_owned());
-
-        start_pos += 3 * STEP;
-    }
-
-    if to_stack.len() == 0 {
-        return String::new()
-    }
-
-    let result = stack(
-        Axis(0),
-        &(to_stack.iter().map(|x| x.view()).collect::<Vec<_>>()),
-    ).unwrap();
-    let alphabet: Vec<char> = "NACGT".chars().collect();
-
-    let preds = result
-        .outer_iter()
-        .map(|sample_predict| {
-            let best = sample_predict.iter().enumerate().fold(0, |best, (i, &x)| {
-                if x > sample_predict[best] {
-                    i
-                } else {
-                    best
-                }
-            });
-            best
-        })
-        .scan(0, |state, x| {
-            let ret = (*state, x);
-            *state = x;
-            Some(ret)
-        })
-        .filter_map(|(prev, current)| {
-            if prev == current || current == 0 {
-                None
-            } else {
-                Some(alphabet[current])
+#[pymethods]
+impl Caller {
+    #[new]
+    fn new(obj: &PyRawObject, path: &str) {
+        obj.init({
+            Caller {
+                net: Net::new(&path).unwrap()
             }
         })
-        .collect::<String>();
+    }
+    
+    fn call_raw_signal(&mut self, raw_data: Vec<f32>) -> String {
+        unsafe {
+          if JITTER48 == ptr::null_mut() {
+            initialize_jit();
+          }
+        }
+        let mut start_pos = 0;
 
-    preds
+        let mut to_stack = Vec::new();
+
+        while start_pos + STEP * 3 + PAD * 6 < raw_data.len() {
+            let chunk = &raw_data[start_pos..(start_pos + STEP * 3 + PAD * 6).min(raw_data.len())];
+            let out = self.net.predict(chunk);
+
+            let slice_start_pos = if start_pos == 0 {
+                0
+            } else {
+                (PAD).min(out.shape()[0])
+            };
+            let slice_end_pos = if start_pos + 3 * STEP + 6 * PAD >= raw_data.len() {
+                out.shape()[0]
+            } else {
+                out.shape()[0] - PAD
+            };
+
+            to_stack.push(out.slice(s![slice_start_pos..slice_end_pos, ..]).to_owned());
+
+            start_pos += 3 * STEP;
+        }
+
+        if to_stack.len() == 0 {
+            return String::new()
+        }
+
+        let result = stack(
+            Axis(0),
+            &(to_stack.iter().map(|x| x.view()).collect::<Vec<_>>()),
+        ).unwrap();
+        let alphabet: Vec<char> = "NACGT".chars().collect();
+
+        let preds = result
+            .outer_iter()
+            .map(|sample_predict| {
+                let best = sample_predict.iter().enumerate().fold(0, |best, (i, &x)| {
+                    if x > sample_predict[best] {
+                        i
+                    } else {
+                        best
+                    }
+                });
+                best
+            })
+            .scan(0, |state, x| {
+                let ret = (*state, x);
+                *state = x;
+                Some(ret)
+            })
+            .filter_map(|(prev, current)| {
+                if prev == current || current == 0 {
+                    None
+                } else {
+                    Some(alphabet[current])
+                }
+            })
+            .collect::<String>();
+
+        preds
+    }
 }
 
 fn initialize_jit() {
@@ -236,7 +250,7 @@ fn initialize_jit() {
 
 #[pymodule]
 fn deepnano2(py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_wrapped(wrap_pyfunction!(call_raw_signal))?;
+    m.add_class::<Caller>()?;
 
     Ok(())
 }
