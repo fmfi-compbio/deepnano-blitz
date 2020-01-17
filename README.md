@@ -30,23 +30,23 @@ For more accurate (but much slower) basecalling run:
 ## Benchmarks
 
 Run on subset of 476 reads from [Klebsiela dataset](https://github.com/rrwick/Basecalling-comparison/tree/95bf07476f61cda79e6971f20f48c6ac83e634b3).
-MinION produces this amount in apx. 52 seconds assuming maximum throughput (which in reality never
+MinION produces this amount in apx. 52 seconds assuming maximum throughput of 2M signals/s (which in reality never
 happens, so realistic number is around 70 seconds).
 
 ### Basecallers in fast mode
 
-| Basecaller                                       | Time to basecall | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
-|--------------------------------------------------|             ----:|                --------:|            ----:|                 -------:|
-| Guppy 3.3.0 fast, 1 thread XEON E5-2695 v4       | 26m 0s           | 80.4%                   | 87.6%           | 91.8%                   |
-| Guppy 3.3.0 fast, 4 threads XEON E5-2695 v4      | 6m 54s           | 80.4%                   | 87.6%           | 91.8%                   |
-| DN-blitz, 1 thread XEON E5-2695 v4               | 2m 38s           | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 4 threads XEON E5-2695 v4              | 41s              | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 1 thread XEON E5-2695 v4, beam         | 2m 51s           | 77.5%                   | 85.1%           | 89.3%                   |
-| DN-blitz, 4 threads XEON E5-2695 v4, beam        | 46s              | 77.5%                   | 85.1%           | 89.3%                   |
-| DN-blitz, 1 thread i7-7700HQ (laptop)            | 1m 50s           | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 4 threads i7-7700HQ (laptop)           | 34s              | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 1 thread i7-7700HQ (laptop), beam      | TODO             | 77.5%                   | 85.1%           | 89.3%                   |
-| DN-blitz, 4 threads i7-7700HQ (laptop), beam     | TODO             | 77.5%                   | 85.1%           | 89.3%                   |
+| Basecaller                                       | Time to basecall | Signals/s | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
+|--------------------------------------------------|             ----:|----------:|                --------:|            ----:|                 -------:|
+| Guppy 3.3.0 fast, 1 thread XEON E5-2695 v4       | 26m 0s           |    67,6k  | 80.4%                   | 87.6%           | 91.8%                   |
+| Guppy 3.3.0 fast, 4 threads XEON E5-2695 v4      | 6m 54s           |    254k   | 80.4%                   | 87.6%           | 91.8%                   |
+| DN-blitz, 1 thread XEON E5-2695 v4               | 2m 38s           |    667k   | 75.5%                   | 84.0%           | 88.7%                   |
+| DN-blitz, 4 threads XEON E5-2695 v4              | 41s              |    2.57M  | 75.5%                   | 84.0%           | 88.7%                   |
+| DN-blitz, 1 thread XEON E5-2695 v4, beam         | 2m 51s           |    616k   | 77.5%                   | 85.1%           | 89.3%                   |
+| DN-blitz, 4 threads XEON E5-2695 v4, beam        | 46s              |    2.29M  | 77.5%                   | 85.1%           | 89.3%                   |
+| DN-blitz, 1 thread i7-7700HQ (laptop)            | 1m 50s           |    959k   | 75.5%                   | 84.0%           | 88.7%                   |
+| DN-blitz, 4 threads i7-7700HQ (laptop)           | 34s              |    3.10M  | 75.5%                   | 84.0%           | 88.7%                   |
+| DN-blitz, 1 thread i7-7700HQ (laptop), beam      | TODO             |           | 77.5%                   | 85.1%           | 89.3%                   |
+| DN-blitz, 4 threads i7-7700HQ (laptop), beam     | TODO             |           | 77.5%                   | 85.1%           | 89.3%                   |
 
 ### Basecallers in high-accuracy mode
 
