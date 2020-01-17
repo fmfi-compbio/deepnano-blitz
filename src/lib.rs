@@ -60,7 +60,7 @@ impl OutLayer {
     }
 
     fn calc(&self, input: &Array<f32, Ix2>) -> Array<f32, Ix2> {
-        input.dot(&self.w) + &self.b;
+        input.dot(&self.w) + &self.b
     }
 }
 
