@@ -14,7 +14,7 @@ Also contains bigger network, which has performance similar to Guppy.
 
 ## Instalation
 
-* Install Rust (you should already have it ;) )
+* Install Rust (programming language, not game and besides you should already have it ;) )
 * Ask for nightly version `rustup default nightly-2019-12-11`
 * Clone this repository
 * Run `python setup.py`
@@ -23,6 +23,9 @@ Also contains bigger network, which has performance similar to Guppy.
 ## Running
 
 `deepnano2_caller.py --output out.fasta --directory reads_directory/`
+
+For more accurate (but much slower) basecalling run:
+`deepnano2_caller.py --output out.fasta --directory reads_directory/ --threads 16 --network-type accurate`
 
 ## Benchmarks
 
@@ -38,7 +41,7 @@ happens, so realistic number is around 70 seconds).
 | DN-blitz, 4 threads XEON E5-2695 v4         | 41s              | 75.5%                   | 84.0%           | 88.7%                   |
 | DN-blitz, 1 thread i7-7700HQ (laptop)       | 1m 50s           | 75.5%                   | 84.0%           | 88.7%                   |
 | DN-blitz, 4 threads i7-7700HQ (laptop)      | 34s              | 75.5%                   | 84.0%           | 88.7%                   |
-| Guppy 3.3.0 hac, 16 threads XEON E5-2695 v4 |                  | 82.5%                   | 89.8%           | 93.8%                   |
+| Guppy 3.3.0 hac, 16 threads XEON E5-2695 v4 | 18m 16s          | 82.5%                   | 89.8%           | 93.8%                   |
 | DN-blitz big, 16 threads XEON E5-2695 v4    | 12m 5s           | 82.1%                   | 89.1%           | 93.2%                   |
 
 Deepnano-blitz currently does not do beam search. With it accuracy would be slightly higher (about 1%),
