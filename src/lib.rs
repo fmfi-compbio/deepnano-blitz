@@ -21,6 +21,7 @@ use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::ptr;
+use std::env;
 
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
@@ -99,7 +100,9 @@ struct Net {
 
 impl Net {
     fn new(filename: &str) -> Result<Net, Box<dyn Error>> {
+        println!("net load {:?} {:?} {:?}", filename, env::current_dir(), env::current_exe());
         let netfile = File::open(filename)?;
+        println!("net loadx");
         let mut bufnetfile = BufReader::new(&netfile);
         let conv_layer1 = ConvLayer::new(&mut bufnetfile)?;
         let rnn_layer1 = BiGRULayer::new(&mut bufnetfile)?;
@@ -136,7 +139,7 @@ impl Net {
     }
 }
 
-thread_local!(static NET: RefCell<Net> = RefCell::new(Net::new("/projects3/usama-nano2/basecalling/deepnano2/weights/weightsn460.txt").unwrap()));
+thread_local!(static NET: RefCell<Net> = RefCell::new(Net::new("weights/weightsn460.txt").unwrap()));
 
 #[pyfunction]
 fn call_raw_signal(raw_data: Vec<f32>) -> String {
