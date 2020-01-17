@@ -43,6 +43,8 @@ if __name__ == '__main__':
     parser.add_argument("--threads", type=int, default=1, help="Number of threads for basecalling")
     parser.add_argument("--weights", type=str, default=None, help="Path to network weights")
     parser.add_argument("--network-type", choices=["fast", "accurate"], default="fast")
+    parser.add_argument("--beam-size", type=int, default=None, help="Beam size (defaults 5 for fast and 20 for accurate. Use 1 to disable.")
+    parser.add_argument("--beam-cut-threshold", type=float, default=None, help="Threshold for creating beams (higher means faster beam search, but smaller accuracy)")
 
     args = parser.parse_args()
 
@@ -57,18 +59,25 @@ if __name__ == '__main__':
         print("Zero input reads, nothing to do.")
         sys.exit()
 
-    if args.network_type == "fast":
-        if args.weights is None:
-            weights = os.path.join(deepnano2.__path__[0], "weights", "weightsn460.txt")
-        else:
-            weights = args.weights
-        caller = deepnano2.Caller(weights)
-    else:
-        if args.weights is None:
+    if args.weights is None:
+        if args.network_type == "accurate":
             weights = os.path.join(deepnano2.__path__[0], "weights", "weightsbig520.txt")
         else:
-            weights = args.weights
-        caller = deepnano2.CallerBig(weights)
+            weights = os.path.join(deepnano2.__path__[0], "weights", "weightsn460.txt")
+    else:
+        weights = args.weights
+
+    if args.beam_size is None:
+        beam_size = 5 if args.network_type == "fast" else 20
+    else:
+        beam_size = args.beam_size
+
+    if args.beam_cut_threshold is None:
+        beam_cut_threshold = 0.1 if args.network_type == "fast" else 0.0001
+    else:
+        beam_cut_threshold = args.beam_cut_threshold
+
+    caller = deepnano2.Caller(args.network_type, weights, beam_size, beam_cut_threshold)
 
 
     fout = open(args.output, "w")

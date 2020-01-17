@@ -33,16 +33,19 @@ Run on subset of 476 reads from [Klebsiela dataset](https://github.com/rrwick/Ba
 MinION produces this amount in apx. 52 seconds assuming maximum throughput (which in reality never
 happens, so realistic number is around 70 seconds).
 
-| Basecaller                                  | Time to basecall | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
-|---------------------------------------------|             ----:|                --------:|            ----:|                 -------:|
-| Guppy 3.3.0 fast, 1 thread XEON E5-2695 v4  | 26m 0s           | 80.4%                   | 87.6%           | 91.8%                   |
-| Guppy 3.3.0 fast, 4 threads XEON E5-2695 v4 | 6m 54s           | 80.4%                   | 87.6%           | 91.8%                   |
-| DN-blitz, 1 thread XEON E5-2695 v4          | 2m 38s           | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 4 threads XEON E5-2695 v4         | 41s              | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 1 thread i7-7700HQ (laptop)       | 1m 50s           | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 4 threads i7-7700HQ (laptop)      | 34s              | 75.5%                   | 84.0%           | 88.7%                   |
-| Guppy 3.3.0 hac, 16 threads XEON E5-2695 v4 | 18m 16s          | 82.5%                   | 89.8%           | 93.8%                   |
-| DN-blitz big, 16 threads XEON E5-2695 v4    | 12m 5s           | 82.1%                   | 89.1%           | 93.2%                   |
+| Basecaller                                       | Time to basecall | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
+|--------------------------------------------------|             ----:|                --------:|            ----:|                 -------:|
+| Guppy 3.3.0 fast, 1 thread XEON E5-2695 v4       | 26m 0s           | 80.4%                   | 87.6%           | 91.8%                   |
+| Guppy 3.3.0 fast, 4 threads XEON E5-2695 v4      | 6m 54s           | 80.4%                   | 87.6%           | 91.8%                   |
+| DN-blitz, 1 thread XEON E5-2695 v4               | 2m 38s           | 75.5%                   | 84.0%           | 88.7%                   |
+| DN-blitz, 4 threads XEON E5-2695 v4              | 41s              | 75.5%                   | 84.0%           | 88.7%                   |
+| DN-blitz, 1 thread XEON E5-2695 v4, beam         | 2m 51s           | 77.5%                   | 85.1%           | 89.3%                   |
+| DN-blitz, 4 threads XEON E5-2695 v4, beam        | 46s              | 77.5%                   | 85.1%           | 89.3%                   |
+| DN-blitz, 1 thread i7-7700HQ (laptop)            | 1m 50s           | 75.5%                   | 84.0%           | 88.7%                   |
+| DN-blitz, 4 threads i7-7700HQ (laptop)           | 34s              | 75.5%                   | 84.0%           | 88.7%                   |
+| Guppy 3.3.0 hac, 16 threads XEON E5-2695 v4      | 18m 16s          | 82.5%                   | 89.8%           | 93.8%                   |
+| DN-blitz big, 16 threads XEON E5-2695 v4         | 12m 5s           | 82.1%                   | 89.1%           | 93.2%                   |
+| DN-blitz big, 16 threads XEON E5-2695 v4, beam   |                  | 83.1%                   | 89.7%           | 93.5%                   |
 
 Deepnano-blitz currently does not do beam search. With it accuracy would be slightly higher (about 1%),
 but it would get slower (not sure how much by now).
