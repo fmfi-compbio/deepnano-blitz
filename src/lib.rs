@@ -13,7 +13,7 @@ use matrix_load::*;
 use conv_layer::*;
 use gru_layer::*;
 
-use libc::c_void;
+use libc::{c_float, c_int, c_longlong, c_void};
 use ndarray::{stack, Array, Axis, Ix1, Ix2};
 use std::cell::RefCell;
 use std::error::Error;
@@ -42,6 +42,7 @@ extern "C" {
         ldc: usize,
     ) -> u32;
     fn mkl_jit_get_sgemm_ptr(JITTER: *const c_void) -> SgemmJitKernelT;
+    fn vmsExp(n: c_int, a: *const c_float, y: *mut c_float, mode: c_longlong);
 }
 
 
@@ -62,7 +63,19 @@ impl OutLayer {
     }
 
     fn calc(&self, input: &Array<f32, Ix2>) -> Array<f32, Ix2> {
-        let logits = input.dot(&self.w) + &self.b;
+        let mut logits = input.dot(&self.w) + &self.b;
+        
+        unsafe {
+            let ptr = logits.as_mut_ptr();
+            vmsExp(5 * input.shape()[0] as i32, ptr, ptr, 259);
+        }
+        for mut row in logits.outer_iter_mut() {
+            let sum = row.sum();
+            row.mapv_inplace(|x| {
+                x / sum
+            });
+        }
+
         logits
     }
 }
@@ -142,18 +155,6 @@ struct Caller {
     net: Net
 }
 
-fn lg_sum(a: f32, b: f32) -> f32 {
-    if a == std::f32::NEG_INFINITY {
-        b
-    } else if b == std::f32::NEG_INFINITY {
-        a
-    } else if a > b {
-        (b-a).exp().ln_1p() + a
-    } else {
-        (a-b).exp().ln_1p() + b
-    }
-}
-
 #[pymethods]
 impl Caller {
     #[new]
@@ -203,58 +204,18 @@ impl Caller {
             Axis(0),
             &(to_stack.iter().map(|x| x.view()).collect::<Vec<_>>()),
         ).unwrap();
-        let alphabet: Vec<char> = "NACGT".chars().collect();
 
-/*        let preds = result
-            .outer_iter()
-            .map(|sample_predict| {
-                let best = sample_predict.iter().enumerate().fold(0, |best, (i, &x)| {
-                    if x > sample_predict[best] {
-                        i
-                    } else {
-                        best
-                    }
-                });
-                best
-            })
-            .scan(0, |state, x| {
-                let ret = (*state, x);
-                *state = x;
-                Some(ret)
-            })
-            .filter_map(|(prev, current)| {
-                if prev == current || current == 0 {
-                    None
-                } else {
-                    Some(alphabet[current])
-                }
-            })
-            .collect::<String>();*/
-
-
-        let out = bs(&result);
-/*        println!("{} {}", out.len(), preds.len());*/
-
-/*        println!("{:?}", bs(
-            &array![[1., 0., 0., 0., 0.],
-                    [0., 1., 0., 0., 0.],
-                    [1., 0., 0., 0., 0.]]));
-        println!("{:?}", bs(
-            &array![[1., 0., 0., 0., 0.],
-                    [1., 0.9, 0., 0., 0.],
-                    [1., 0.9, 0., 0., 0.],
-                    [1., 0., 0., 0., 0.]]));*/
-        out
+        beam_search(&result)
     }
 }
 
-fn bs(result: &Array<f32, Ix2>) -> String {
+fn beam_search(result: &Array<f32, Ix2>) -> String {
     let alphabet: Vec<char> = "NACGT".chars().collect();
     let beam_size = 5;
     // (base, what)
     let mut beam_prevs = vec![(0, 0)];
     let mut beam_forward: Vec<[i32; 4]> = vec![[-1, -1, -1, -1]];
-    let mut cur_probs = vec![(0i32, std::f32::NEG_INFINITY, 0.0)];
+    let mut cur_probs = vec![(0i32, 0.0, 1.0)];
     let mut new_probs = Vec::new();
     
     for pr in result.slice(s![..;-1, ..]).outer_iter() {
@@ -262,11 +223,11 @@ fn bs(result: &Array<f32, Ix2>) -> String {
 
         for &(beam, base_prob, n_prob) in &cur_probs {
             // add N to beam
-            new_probs.push((beam, std::f32::NEG_INFINITY, lg_sum(n_prob, base_prob) + pr[0]));
+            new_probs.push((beam, 0.0, (n_prob + base_prob) * pr[0]));
 
             for b in 1..5 {
                 if b == beam_prevs[beam as usize].0 {
-                    new_probs.push((beam, base_prob + pr[b], std::f32::NEG_INFINITY));
+                    new_probs.push((beam, base_prob * pr[b], 0.0));
                     let mut new_beam = beam_forward[beam as usize][b-1];
                     if new_beam == -1 {
                         new_beam = beam_prevs.len() as i32;
@@ -275,7 +236,7 @@ fn bs(result: &Array<f32, Ix2>) -> String {
                         beam_forward.push([-1, -1, -1, -1]);
                     }
 
-                    new_probs.push((new_beam, n_prob + pr[b], std::f32::NEG_INFINITY));
+                    new_probs.push((new_beam, n_prob * pr[b], 0.0));
 
                 } else {
                     let mut new_beam = beam_forward[beam as usize][b-1];
@@ -286,7 +247,7 @@ fn bs(result: &Array<f32, Ix2>) -> String {
                         beam_forward.push([-1, -1, -1, -1]);
                     }
 
-                    new_probs.push((new_beam, lg_sum(base_prob, n_prob) + pr[b], std::f32::NEG_INFINITY));
+                    new_probs.push((new_beam, (base_prob + n_prob) * pr[b], 0.0));
                 }
             }
         }
@@ -297,8 +258,8 @@ fn bs(result: &Array<f32, Ix2>) -> String {
         let mut last_key_pos = 0;
         for i in 0..cur_probs.len() {
             if cur_probs[i].0 == last_key {
-                cur_probs[last_key_pos].1 = lg_sum(cur_probs[last_key_pos].1, cur_probs[i].1);
-                cur_probs[last_key_pos].2 = lg_sum(cur_probs[last_key_pos].2, cur_probs[i].2);
+                cur_probs[last_key_pos].1 = cur_probs[last_key_pos].1 + cur_probs[i].1;
+                cur_probs[last_key_pos].2 = cur_probs[last_key_pos].2 +cur_probs[i].2;
                 cur_probs[i].0 = -1;
             } else {
                 last_key_pos = i;
@@ -307,8 +268,13 @@ fn bs(result: &Array<f32, Ix2>) -> String {
         }
 
         cur_probs.retain(|x| x.0 != -1);
-        cur_probs.sort_by(|a, b| lg_sum(b.1, b.2).partial_cmp(&lg_sum(a.1, a.2)).unwrap());
+        cur_probs.sort_by(|a, b| (b.1 + b.2).partial_cmp(&(a.1 + a.2)).unwrap());
         cur_probs.truncate(beam_size);
+        let top = cur_probs[0].1 + cur_probs[0].2;
+        for mut x in &mut cur_probs {
+            x.1 /= top;
+            x.2 /= top;
+        }
     }
 
     let mut out = String::new();
