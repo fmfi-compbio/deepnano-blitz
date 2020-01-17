@@ -1,15 +1,23 @@
+use std::{env, path::*};
+use std::process::Command;
+
 fn main() {
-//  println!("cargo:rustc-link-search=../mkl-dnn/output/lib");
-  println!("cargo:rustc-link-search=/home/usama/miniconda2/envs/dntest/lib");
+    let out_dir = env::var("OUT_DIR").unwrap();
 
-//  println!("cargo:rustc-link-lib=static=mkl_sequential");
-//  println!("cargo:rustc-link-lib=static=mkl_intel_ilp64");
-//  println!("cargo:rustc-link-lib=static=mkl_core");
+    // TODO: make this crossplatform?
+    Command::new("wget")
+            .arg("https://anaconda.org/intel/mkl-static/2020.0/download/linux-64/mkl-static-2020.0-intel_166.tar.bz2")
+            .args(&["-P", &out_dir]) 
+            .status().unwrap();
 
-//  println!("cargo:rustc-link-lib=static=mkl_sequential");
-//  println!("cargo:rustc-link-lib=static=mkl_intel_ilp64");
-//  println!("cargo:rustc-link-lib=static=mkl_core");
+    Command::new("tar")
+            .arg("-xvf")
+            .arg(&format!("{}/mkl-static-2020.0-intel_166.tar.bz2", out_dir))
+            .args(&["-C", &out_dir])
+            .status().unwrap();
 
-//  println!("cargo:rustc-link-lib=mkldnn");
-//  println!("cargo:rustc-link-lib=iomp5")
+    println!("cargo:rustc-link-search={}/lib", out_dir);
+    println!("cargo:rustc-link-lib=static-nobundle=mkl_intel_ilp64");
+    println!("cargo:rustc-link-lib=static-nobundle=mkl_sequential");
+    println!("cargo:rustc-link-lib=static-nobundle=mkl_core");
 }

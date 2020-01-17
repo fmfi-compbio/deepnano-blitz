@@ -1,11 +1,7 @@
-#![feature(link_args)]
+#![feature(static_nobundle)]
 
 #[macro_use(s)]
 extern crate ndarray;
-
-
-#[link_args = " -Wl,-Bstatic -Wl,--start-group -l mkl_intel_ilp64 -l mkl_sequential -lmkl_core -Wl,--end-group"]
-extern {}
 extern crate kth;
 extern crate libc;
 
@@ -31,7 +27,6 @@ use std::time::{SystemTime};
 
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
-//use caller::{get_raw_data, ConvLayer, load2dmatrix, load1dmatrix, ConvSizer, BiGRULayer, SgemmJitKernelT, GRUSizer};
 
 extern "C" {
     fn mkl_cblas_jit_create_sgemm(
@@ -179,7 +174,10 @@ fn call_raw_signal(raw_data: Vec<f32>) -> String {
 
         start_pos += 3 * STEP;
     }
-    println!("boo");
+
+    if to_stack.len() == 0 {
+        return String::new()
+    }
 
     let result = stack(
         Axis(0),
@@ -219,6 +217,7 @@ fn call_raw_signal(raw_data: Vec<f32>) -> String {
 fn initialize_jit() {
     unsafe {
         JITTER48 = ptr::null_mut();
+        // TODO: check
         let status = mkl_cblas_jit_create_sgemm(
             &mut JITTER48,
             101,
@@ -233,7 +232,6 @@ fn initialize_jit() {
             0.0,
             48 * 3,
         );
-        println!("st {:?}", status);
 
         SGEMM48 = mkl_jit_get_sgemm_ptr(JITTER48);
     }
