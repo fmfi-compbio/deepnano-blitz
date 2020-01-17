@@ -7,6 +7,7 @@ from MinION.
 
 * Works only on 64bit linux.
 * On AMD cpus it is advised to use: `export MKL_DEBUG_CPU_TYPE=5`
+* You need python3 (tested with python 3.6)
 
 ## Instalation
 
