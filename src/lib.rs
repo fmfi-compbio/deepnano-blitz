@@ -1,6 +1,6 @@
 #![feature(static_nobundle)]
 
-#[macro_use(s)]
+#[macro_use(s, array)]
 extern crate ndarray;
 extern crate kth;
 extern crate libc;
@@ -142,6 +142,18 @@ struct Caller {
     net: Net
 }
 
+fn lg_sum(a: f32, b: f32) -> f32 {
+    if a == std::f32::NEG_INFINITY {
+        b
+    } else if b == std::f32::NEG_INFINITY {
+        a
+    } else if a > b {
+        (b-a).exp().ln_1p() + a
+    } else {
+        (a-b).exp().ln_1p() + b
+    }
+}
+
 #[pymethods]
 impl Caller {
     #[new]
@@ -193,7 +205,7 @@ impl Caller {
         ).unwrap();
         let alphabet: Vec<char> = "NACGT".chars().collect();
 
-        let preds = result
+/*        let preds = result
             .outer_iter()
             .map(|sample_predict| {
                 let best = sample_predict.iter().enumerate().fold(0, |best, (i, &x)| {
@@ -217,10 +229,95 @@ impl Caller {
                     Some(alphabet[current])
                 }
             })
-            .collect::<String>();
+            .collect::<String>();*/
 
-        preds
+
+        let out = bs(&result);
+/*        println!("{} {}", out.len(), preds.len());*/
+
+/*        println!("{:?}", bs(
+            &array![[1., 0., 0., 0., 0.],
+                    [0., 1., 0., 0., 0.],
+                    [1., 0., 0., 0., 0.]]));
+        println!("{:?}", bs(
+            &array![[1., 0., 0., 0., 0.],
+                    [1., 0.9, 0., 0., 0.],
+                    [1., 0.9, 0., 0., 0.],
+                    [1., 0., 0., 0., 0.]]));*/
+        out
     }
+}
+
+fn bs(result: &Array<f32, Ix2>) -> String {
+    let alphabet: Vec<char> = "NACGT".chars().collect();
+    let beam_size = 5;
+    // (base, what)
+    let mut beam_prevs = vec![(0, 0)];
+    let mut beam_forward: Vec<[i32; 4]> = vec![[-1, -1, -1, -1]];
+    let mut cur_probs = vec![(0i32, std::f32::NEG_INFINITY, 0.0)];
+    let mut new_probs = Vec::new();
+    
+    for pr in result.slice(s![..;-1, ..]).outer_iter() {
+        new_probs.clear();
+
+        for &(beam, base_prob, n_prob) in &cur_probs {
+            // add N to beam
+            new_probs.push((beam, std::f32::NEG_INFINITY, lg_sum(n_prob, base_prob) + pr[0]));
+
+            for b in 1..5 {
+                if b == beam_prevs[beam as usize].0 {
+                    new_probs.push((beam, base_prob + pr[b], std::f32::NEG_INFINITY));
+                    let mut new_beam = beam_forward[beam as usize][b-1];
+                    if new_beam == -1 {
+                        new_beam = beam_prevs.len() as i32;
+                        beam_prevs.push((b, beam));
+                        beam_forward[beam as usize][b-1] = new_beam;
+                        beam_forward.push([-1, -1, -1, -1]);
+                    }
+
+                    new_probs.push((new_beam, n_prob + pr[b], std::f32::NEG_INFINITY));
+
+                } else {
+                    let mut new_beam = beam_forward[beam as usize][b-1];
+                    if new_beam == -1 {
+                        new_beam = beam_prevs.len() as i32;
+                        beam_prevs.push((b, beam));
+                        beam_forward[beam as usize][b-1] = new_beam;
+                        beam_forward.push([-1, -1, -1, -1]);
+                    }
+
+                    new_probs.push((new_beam, lg_sum(base_prob, n_prob) + pr[b], std::f32::NEG_INFINITY));
+                }
+            }
+        }
+        std::mem::swap(&mut cur_probs, &mut new_probs);
+
+        cur_probs.sort_by_key(|x| x.0);
+        let mut last_key: i32 = -1;
+        let mut last_key_pos = 0;
+        for i in 0..cur_probs.len() {
+            if cur_probs[i].0 == last_key {
+                cur_probs[last_key_pos].1 = lg_sum(cur_probs[last_key_pos].1, cur_probs[i].1);
+                cur_probs[last_key_pos].2 = lg_sum(cur_probs[last_key_pos].2, cur_probs[i].2);
+                cur_probs[i].0 = -1;
+            } else {
+                last_key_pos = i;
+                last_key = cur_probs[i].0;
+            }
+        }
+
+        cur_probs.retain(|x| x.0 != -1);
+        cur_probs.sort_by(|a, b| lg_sum(b.1, b.2).partial_cmp(&lg_sum(a.1, a.2)).unwrap());
+        cur_probs.truncate(beam_size);
+    }
+
+    let mut out = String::new();
+    let mut beam = cur_probs[0].0;
+    while beam != 0 {
+        out.push(alphabet[beam_prevs[beam as usize].0]);
+        beam = beam_prevs[beam as usize].1;
+    }
+    out
 }
 
 struct Conv33_256 {
