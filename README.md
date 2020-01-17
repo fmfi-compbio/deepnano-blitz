@@ -33,6 +33,8 @@ Run on subset of 476 reads from [Klebsiela dataset](https://github.com/rrwick/Ba
 MinION produces this amount in apx. 52 seconds assuming maximum throughput (which in reality never
 happens, so realistic number is around 70 seconds).
 
+### Basecallers in fast mode
+
 | Basecaller                                       | Time to basecall | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
 |--------------------------------------------------|             ----:|                --------:|            ----:|                 -------:|
 | Guppy 3.3.0 fast, 1 thread XEON E5-2695 v4       | 26m 0s           | 80.4%                   | 87.6%           | 91.8%                   |
@@ -45,6 +47,13 @@ happens, so realistic number is around 70 seconds).
 | DN-blitz, 4 threads i7-7700HQ (laptop)           | 34s              | 75.5%                   | 84.0%           | 88.7%                   |
 | DN-blitz, 1 thread i7-7700HQ (laptop), beam      | TODO             | 77.5%                   | 85.1%           | 89.3%                   |
 | DN-blitz, 4 threads i7-7700HQ (laptop), beam     | TODO             | 77.5%                   | 85.1%           | 89.3%                   |
+
+### Basecallers in high-accuracy mode
+
+Note, that we are using 16 threads.
+
+| Basecaller                                       | Time to basecall | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
+|--------------------------------------------------|             ----:|                --------:|            ----:|                 -------:|
 | Guppy 3.3.0 hac, 16 threads XEON E5-2695 v4      | 18m 16s          | 82.5%                   | 89.8%           | 93.8%                   |
 | DN-blitz big, 16 threads XEON E5-2695 v4         | 12m 5s           | 82.1%                   | 89.1%           | 93.2%                   |
 | DN-blitz big, 16 threads XEON E5-2695 v4, beam   | 12m 30s          | 83.4%                   | 89.8%           | 93.6%                   |
