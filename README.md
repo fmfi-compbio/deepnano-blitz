@@ -43,9 +43,8 @@ happens, so realistic number is around 70 seconds).
 | DN-blitz, 4 threads XEON E5-2695 v4, beam        | 46s              | 77.5%                   | 85.1%           | 89.3%                   |
 | DN-blitz, 1 thread i7-7700HQ (laptop)            | 1m 50s           | 75.5%                   | 84.0%           | 88.7%                   |
 | DN-blitz, 4 threads i7-7700HQ (laptop)           | 34s              | 75.5%                   | 84.0%           | 88.7%                   |
+| DN-blitz, 1 thread i7-7700HQ (laptop), beam      | TODO             | 77.5%                   | 85.1%           | 89.3%                   |
+| DN-blitz, 4 threads i7-7700HQ (laptop), beam     | TODO             | 77.5%                   | 85.1%           | 89.3%                   |
 | Guppy 3.3.0 hac, 16 threads XEON E5-2695 v4      | 18m 16s          | 82.5%                   | 89.8%           | 93.8%                   |
 | DN-blitz big, 16 threads XEON E5-2695 v4         | 12m 5s           | 82.1%                   | 89.1%           | 93.2%                   |
-| DN-blitz big, 16 threads XEON E5-2695 v4, beam   |                  | 83.1%                   | 89.7%           | 93.5%                   |
-
-Deepnano-blitz currently does not do beam search. With it accuracy would be slightly higher (about 1%),
-but it would get slower (not sure how much by now).
+| DN-blitz big, 16 threads XEON E5-2695 v4, beam   | 12m 30s          | 83.4%                   | 89.8%           | 93.6%                   |
