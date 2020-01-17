@@ -16,7 +16,7 @@ except ImportError:
         from setuptools_rust import RustExtension, Binding
 
 setup_requires = ["setuptools-rust>=0.10.1", "wheel"]
-install_requires = []
+install_requires = ["ont-fast5-api>=2.0.1"]
 
 setup(
     name="deepnano2",
@@ -27,6 +27,7 @@ setup(
     zip_safe=False,
     install_requires=install_requires,
     setup_requires=setup_requires,
+    scripts=["scripts/deepnano2_caller.py"]
 )
 
 

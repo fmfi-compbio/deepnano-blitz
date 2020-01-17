@@ -17,13 +17,10 @@ use libc::c_void;
 use ndarray::{stack, Array, Axis, Ix1, Ix2};
 use std::cell::RefCell;
 use std::error::Error;
-use std::fs;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
-use std::io::Write;
 use std::ptr;
-use std::time::{SystemTime};
 
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
@@ -117,14 +114,13 @@ impl Net {
     }
 
     fn predict(&mut self, chunk: &[f32]) -> Array<f32, Ix2> {
-        //        let start = SystemTime::now();
         let scaled_data = Array::from_shape_vec(
             (chunk.len(), 2),
             chunk
                 .iter()
                 .flat_map(|&x| {
                     use std::iter::once;
-                    let scaled = x;
+                    let scaled = x.max(-2.5).min(2.5);
                     once(scaled).chain(once(scaled * scaled))
                 })
                 .collect::<Vec<_>>(),
@@ -132,12 +128,10 @@ impl Net {
         .unwrap();
 
         let r1 = self.conv_layer1.calc(&scaled_data);
-        //        let mut r1p = max_pool(&r1);
         let r2 = self.rnn_layer1.calc(&r1);
         let r3 = self.rnn_layer2.calc(&r2);
         let out = self.out_layer.calc(&r3);
 
-        //        println!("nt {:?}", start.elapsed());
         out
     }
 }
