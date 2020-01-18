@@ -39,10 +39,10 @@ happens, so realistic number is around 70 seconds).
 |--------------------------------------------------|             ----:|----------:|                --------:|            ----:|                 -------:|
 | Guppy 3.3.0 fast, 1 thread XEON E5-2695 v4       | 26m 0s           |    67,6k  | 80.4%                   | 87.6%           | 91.8%                   |
 | Guppy 3.3.0 fast, 4 threads XEON E5-2695 v4      | 6m 54s           |    254k   | 80.4%                   | 87.6%           | 91.8%                   |
-| DN-blitz, 1 thread XEON E5-2695 v4               | 2m 38s           |    667k   | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 4 threads XEON E5-2695 v4              | 41s              |    2.57M  | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 1 thread XEON E5-2695 v4, beam         | 2m 51s           |    616k   | 77.5%                   | 85.1%           | 89.3%                   |
-| DN-blitz, 4 threads XEON E5-2695 v4, beam        | 46s              |    2.29M  | 77.5%                   | 85.1%           | 89.3%                   |
+| DN-blitz, 1 thread XEON E5-2695 v4               | 2m 3s            |    857k   | 75.5%                   | 83.9%           | 88.7%                   |
+| DN-blitz, 4 threads XEON E5-2695 v4              | 32s              |    3.30M  | 75.5%                   | 83.9%           | 88.7%                   |
+| DN-blitz, 1 thread XEON E5-2695 v4, beam         | 2m 12s           |    799k   | 77.4%                   | 85.1%           | 89.2%                   |
+| DN-blitz, 4 threads XEON E5-2695 v4, beam        | 34s              |    3.10M  | 77.4%                   | 85.1%           | 89.2%                   |
 | DN-blitz, 1 thread i7-7700HQ (laptop)            | 1m 24s           |    1.25M  | 75.5%                   | 84.0%           | 88.7%                   |
 | DN-blitz, 4 threads i7-7700HQ (laptop)           | 28s              |    3.77M  | 75.5%                   | 84.0%           | 88.7%                   |
 | DN-blitz, 1 thread i7-7700HQ (laptop), beam      | 1m 33s           |    1.13M  | 77.5%                   | 85.1%           | 89.3%                   |
