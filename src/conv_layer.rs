@@ -2,13 +2,8 @@ use ndarray::linalg::general_mat_mul;
 use ndarray::{Array, Ix1, Ix2};
 use crate::matrix_load::*;
 use std::io::BufRead;
-use libc::{c_float, c_int, c_longlong};
 use std::error::Error;
 use std::marker::PhantomData;
-
-extern "C" {
-  fn vmsTanh(n: c_int, a: *const c_float, y: *mut c_float, mode: c_longlong);
-}
 
 pub trait ConvSizer {
   fn output_features() -> usize;
@@ -88,7 +83,9 @@ impl<CS: ConvSizer> ConvLayer<CS> {
         pooled += &self.b;
         unsafe {
             let ptr = pooled.as_mut_ptr();
-            vmsTanh(pooled.len() as i32, ptr, ptr, 3);
+            for i in 0..pooled.len() as isize {
+                *ptr.offset(i) = fastapprox::faster::tanh(*ptr.offset(i))
+            }
         }
 
         pooled

@@ -43,10 +43,10 @@ happens, so realistic number is around 70 seconds).
 | DN-blitz, 4 threads XEON E5-2695 v4              | 41s              |    2.57M  | 75.5%                   | 84.0%           | 88.7%                   |
 | DN-blitz, 1 thread XEON E5-2695 v4, beam         | 2m 51s           |    616k   | 77.5%                   | 85.1%           | 89.3%                   |
 | DN-blitz, 4 threads XEON E5-2695 v4, beam        | 46s              |    2.29M  | 77.5%                   | 85.1%           | 89.3%                   |
-| DN-blitz, 1 thread i7-7700HQ (laptop)            | 1m 50s           |    959k   | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 4 threads i7-7700HQ (laptop)           | 34s              |    3.10M  | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 1 thread i7-7700HQ (laptop), beam      | 1m 55s           |    917k   | 77.5%                   | 85.1%           | 89.3%                   |
-| DN-blitz, 4 threads i7-7700HQ (laptop), beam     | 37s              |    2.85M  | 77.5%                   | 85.1%           | 89.3%                   |
+| DN-blitz, 1 thread i7-7700HQ (laptop)            | 1m 24s           |    1.25M  | 75.5%                   | 84.0%           | 88.7%                   |
+| DN-blitz, 4 threads i7-7700HQ (laptop)           | 28s              |    3.77M  | 75.5%                   | 84.0%           | 88.7%                   |
+| DN-blitz, 1 thread i7-7700HQ (laptop), beam      | 1m 33s           |    1.13M  | 77.5%                   | 85.1%           | 89.3%                   |
+| DN-blitz, 4 threads i7-7700HQ (laptop), beam     | 29s              |    3.64M  | 77.5%                   | 85.1%           | 89.3%                   |
 
 ### Basecallers in high-accuracy mode
 

@@ -3,13 +3,9 @@ use std::error::Error;
 use std::io::BufRead;
 use ndarray::linalg::general_mat_mul;
 use crate::matrix_load::*;
-use libc::{c_float, c_int, c_longlong, c_void};
+use libc::c_void;
 use std::marker::PhantomData;
 
-extern "C" {
-    fn vmsExp(n: c_int, a: *const c_float, y: *mut c_float, mode: c_longlong);
-    fn vmsTanh(n: c_int, a: *const c_float, y: *mut c_float, mode: c_longlong);
-}
 pub type SgemmJitKernelT =
     Option<unsafe extern "C" fn(arg1: *mut c_void, arg2: *mut f32, arg3: *mut f32, arg4: *mut f32)>;
 
@@ -89,13 +85,8 @@ impl<GS: GRUSizer> GRULayer<GS> {
                     let ptr = state_proc.as_mut_ptr();
                     let sptr = sample.as_ptr();
                     let bptr = self.biur.as_ptr();
-
-                    for i in 0..2*GS::output_features() as isize {
-                        *ptr.offset(i) = *ptr.offset(i) + *sptr.offset(i) + *bptr.offset(i);
-                    }
-                    vmsExp(2 * GS::output_features() as i32, ptr, ptr, 259);
-                    for i in 0..2*GS::output_features() as isize {
-                        *ptr.offset(i) = 1.0 / (1.0 + *ptr.offset(i));
+		    for i in 0..2*GS::output_features() as isize {
+                        *ptr.offset(i) = 1.0 / (1.0 + fastapprox::faster::exp(*ptr.offset(i) + *sptr.offset(i) + *bptr.offset(i)));
                     }
                 }
             }
@@ -120,11 +111,9 @@ impl<GS: GRUSizer> GRULayer<GS> {
                         + *biptr.offset(i);
                 }
 
-                vmsTanh(GS::output_features() as i32, nvptr, nvptr, 259);
-
-                for i in 0..GS::output_features() as isize {
+		for i in 0..GS::output_features() as isize {
                     *stptr.offset(i) = *old_st_ptr.offset(i) * *ptr.offset(i)
-                        + (1.0 - *ptr.offset(i)) * *nvptr.offset(i);
+                            + (1.0 - *ptr.offset(i)) * fastapprox::faster::tanh(*nvptr.offset(i));
                 }
             }
         }
