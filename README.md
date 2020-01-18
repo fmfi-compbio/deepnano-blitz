@@ -2,6 +2,8 @@
 
 This is a very fast basecaseller which can basecall reads as fast as they come
 from MinION on ordinary laptop.
+There is also GPU version of basecaller, which (soon) will be as good as Guppy
+and **does not** require compute capability 6.2 (anything which can run Pytorch 1.0 is good enough).
 
 Also contains bigger network, which has performance similar to Guppy.
 
@@ -14,6 +16,7 @@ Also contains bigger network, which has performance similar to Guppy.
 
 ## Instalation
 
+* [optional] If you want to use GPU, we recommend setting up Conda environment with pytorch first.
 * Install Rust (programming language, not game and besides you should already have it ;) )
 * Ask for nightly version `rustup default nightly-2019-12-11`
 * Clone this repository
@@ -57,3 +60,4 @@ Note, that we are using 16 threads.
 | Guppy 3.3.0 hac, 16 threads XEON E5-2695 v4      | 18m 16s          | 82.5%                   | 89.8%           | 93.8%                   |
 | DN-blitz big, 16 threads XEON E5-2695 v4         | 12m 5s           | 82.1%                   | 89.1%           | 93.2%                   |
 | DN-blitz big, 16 threads XEON E5-2695 v4, beam   | 12m 30s          | 83.4%                   | 89.8%           | 93.6%                   |
+| DN-blitz big, Titan XP GPU                       | 1m 14s           | 82.2%                   | 89.2%           | 93.2%                   |

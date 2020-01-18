@@ -27,9 +27,12 @@ setup(
     zip_safe=False,
     install_requires=install_requires,
     setup_requires=setup_requires,
-    scripts=["scripts/deepnano2_caller.py"],
+    scripts=["scripts/deepnano2_caller.py", "scripts/deepnano2_caller_gpu.py"],
     package_data={'deepnano2': ['weights/*.txt']},
-    include_package_data=True
+    include_package_data=True,
+    extras_require={
+        "gpu": ["torch>=1.0.0"]
+    }
 )
 
 
