@@ -45,8 +45,8 @@ happens, so realistic number is around 70 seconds).
 | DN-blitz, 4 threads XEON E5-2695 v4, beam        | 46s              |    2.29M  | 77.5%                   | 85.1%           | 89.3%                   |
 | DN-blitz, 1 thread i7-7700HQ (laptop)            | 1m 50s           |    959k   | 75.5%                   | 84.0%           | 88.7%                   |
 | DN-blitz, 4 threads i7-7700HQ (laptop)           | 34s              |    3.10M  | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 1 thread i7-7700HQ (laptop), beam      | TODO             |           | 77.5%                   | 85.1%           | 89.3%                   |
-| DN-blitz, 4 threads i7-7700HQ (laptop), beam     | TODO             |           | 77.5%                   | 85.1%           | 89.3%                   |
+| DN-blitz, 1 thread i7-7700HQ (laptop), beam      | 1m 55s           |    917k   | 77.5%                   | 85.1%           | 89.3%                   |
+| DN-blitz, 4 threads i7-7700HQ (laptop), beam     | 37s              |    2.85M  | 77.5%                   | 85.1%           | 89.3%                   |
 
 ### Basecallers in high-accuracy mode
 
