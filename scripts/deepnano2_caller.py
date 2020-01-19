@@ -25,13 +25,16 @@ def rescale_signal(signal):
 
 def call_file(filename):
     out = []
-    with get_fast5_file(filename, mode="r") as f5:
-        for read in f5.get_reads():
-            read_id = read.get_read_id()
-            signal = read.get_raw_data()
-            signal = rescale_signal(signal)
+    try:
+        with get_fast5_file(filename, mode="r") as f5:
+            for read in f5.get_reads():
+                read_id = read.get_read_id()
+                signal = read.get_raw_data()
+                signal = rescale_signal(signal)
 
-            out.append((read_id, caller.call_raw_signal(signal)))
+                out.append((read_id, caller.call_raw_signal(signal)))
+    except OSError:
+        return []
     return out
 
 if __name__ == '__main__':

@@ -110,14 +110,18 @@ if __name__ == '__main__':
     group = []
     print("start", datetime.datetime.now())
     for fn in files:
-        with get_fast5_file(fn, mode="r") as f5:
-            for read in f5.get_reads():
-                group.append((read.get_read_id(), rescale_signal(read.get_raw_data())))
-                if len(group) >= reads_in_group:
-                    for read_id, basecall in call_group(group):
-                        print(">%s" % read_id, file=fout)
-                        print(basecall, file=fout)
-                    group = []
+        try:
+            with get_fast5_file(fn, mode="r") as f5:
+                for read in f5.get_reads():
+                    group.append((read.get_read_id(), rescale_signal(read.get_raw_data())))
+                    if len(group) >= reads_in_group:
+                        for read_id, basecall in call_group(group):
+                            print(">%s" % read_id, file=fout)
+                            print(basecall, file=fout)
+                        group = []
+        except OSError:
+            # TODO show something here
+            pass
     if len(group) > 0:
         for read_id, basecall in call_group(group):
             print(">%s" % read_id, file=fout)

@@ -64,3 +64,18 @@ Note, that we are using 16 threads.
 | DN-blitz big, Titan XP GPU                       | 54s              | 82.2%                   | 89.2%           | 93.2%                   |
 | DN-blitz big, Quadro M1200 GPU (laptop)          | 4m 5s            | 82.2%                   | 89.2%           | 93.2%                   |
 | Guppy 3.3.0 hac,  Quadro M1200 GPU (laptop)      | N/A              | N/A                     | N/A             | N/A                     |
+
+TODO: beam search for GPU version
+
+### Accuracy on Human data
+
+(TODO exact source)
+
+| Basecaller                                       | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
+|--------------------------------------------------|                --------:|            ----:|                 -------:|
+| Guppy 3.3.0 hac,                                 | 57.7%                   | 88.2%           | 93.4%                   |
+| Guppy 3.3.0 fast                                 | 58.9%                   | 85.7%           | 91.0%                   |
+| DN-blitz                                         | 57.3%                   | 81.1%           | 86.8%                   |
+| DN-blitz, beam                                   | 55.2%                   | 81.6%           | 87.5%                   |
+| DN-blitz big                                     | 56.5%                   | 86.7%           | 91.9%                   |
+
