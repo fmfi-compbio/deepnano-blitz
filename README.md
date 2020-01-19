@@ -60,4 +60,5 @@ Note, that we are using 16 threads.
 | Guppy 3.3.0 hac, 16 threads XEON E5-2695 v4      | 18m 16s          | 82.5%                   | 89.8%           | 93.8%                   |
 | DN-blitz big, 16 threads XEON E5-2695 v4         | 12m 5s           | 82.1%                   | 89.1%           | 93.2%                   |
 | DN-blitz big, 16 threads XEON E5-2695 v4, beam   | 12m 30s          | 83.4%                   | 89.8%           | 93.6%                   |
-| DN-blitz big, Titan XP GPU                       | 1m 14s           | 82.2%                   | 89.2%           | 93.2%                   |
+| Guppy 3.3.0 hac, Titan XP GPU                    | 36s              | 82.5%                   | 89.8%           | 93.8%                   |
+| DN-blitz big, Titan XP GPU                       | 54s              | 82.2%                   | 89.2%           | 93.2%                   |

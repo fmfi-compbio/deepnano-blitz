@@ -12,7 +12,8 @@ from deepnano2.gpu_model import Net
 
 step = 550
 pad = 25
-batch_size = 512
+batch_size = 1024
+reads_in_group = 100
 
 def med_mad(x, factor=1.4826):
     """
@@ -29,49 +30,45 @@ def rescale_signal(signal):
     signal /= mad       
     return np.clip(signal, -2.5, 2.5)
 
-def call_signal(signal):
+def call_group(group):
     chunks = []
-    for i in range(0, len(signal), 3*step):
-        if i + 3*step + 6*pad > len(signal):
-            break
-        part = np.array(signal[i:i+3*step+6*pad])    
-        chunks.append(np.vstack([part, part * part]).T)
-    chunks = np.stack(chunks)
+    read_lens = []
+    for read_id, signal in group:
+        rl = 0
+        for i in range(0, len(signal), 3*step):
+            if i + 3*step + 6*pad > len(signal):
+                break
+            part = np.array(signal[i:i+3*step+6*pad])    
+            chunks.append(np.vstack([part, part * part]).T)
+            rl += 1
+        read_lens.append((read_id, rl))
 
+    chunks = np.stack(chunks)
     outputs = []
     for i in range(0, len(chunks), batch_size):
+        print("bs", len(chunks[i:i+batch_size]), datetime.datetime.now())
         net_result = model(torch.Tensor(chunks[i:i+batch_size]).cuda()).detach().cpu().numpy()
 
         for row in net_result:
             outputs.append(row[pad:-pad])
 
-    alph = "NACGT"
-    seq = []
-    last = 47
-    for o in outputs:
-        #print(o.shape)
-        am = np.argmax(o, axis=1)
-        for x in am:
-            #print(prd)
-            #x = np.random.choice(5, p=prd)
-            if x != 0 and x != last:
-                seq.append(alph[x])
-            last = x
-    seq = "".join(seq)
-
-    return seq
-
-
-def call_file(filename):
+    last_f = 0
+    alph = np.array(["N", "A", "C", "G", "T"])
     out = []
-    with get_fast5_file(filename, mode="r") as f5:
-        for read in f5.get_reads():
-            read_id = read.get_read_id()
-            signal = read.get_raw_data()
-            signal = rescale_signal(signal)
+    for read_id, rl in read_lens:
+        seq = []
+        last = 47
+        stacked = np.vstack(outputs[last_f:last_f+rl])
+        am = np.argmax(stacked, axis=1)
+        selection = np.ones(len(am), dtype=bool)
+        selection[1:] = am[1:] != am[:-1]
+        selection &= am != 0
+        seq = "".join(alph[am[selection]])
 
-            out.append((read_id, call_signal(signal)))
+        out.append((read_id, seq))
+        last_f += rl
     return out
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Fast caller for ONT reads')
@@ -109,10 +106,21 @@ if __name__ == '__main__':
     fout = open(args.output, "w")
 
     done = 0
+
+    group = []
+    print("start", datetime.datetime.now())
     for fn in files:
-        start = datetime.datetime.now()
-        for read_id, basecall in call_file(fn):
+        with get_fast5_file(fn, mode="r") as f5:
+            for read in f5.get_reads():
+                group.append((read.get_read_id(), rescale_signal(read.get_raw_data())))
+                if len(group) >= reads_in_group:
+                    for read_id, basecall in call_group(group):
+                        print(">%s" % read_id, file=fout)
+                        print(basecall, file=fout)
+                    group = []
+    if len(group) > 0:
+        for read_id, basecall in call_group(group):
             print(">%s" % read_id, file=fout)
             print(basecall, file=fout)
-            done += 1
-            print("done %d/%d" % (done, len(files)), read_id, datetime.datetime.now() - start)
+
+    print("fin", datetime.datetime.now())
