@@ -22,8 +22,7 @@ class Net(torch.nn.Module):
     def forward(self, x):
         x = x.permute((0,2,1))
         x = self.c(x)
-        x = x.permute((0,2,1))
-        x = x.permute((1,0,2))
+        x = x.permute((2,0,1))
         for rnn in self.rnns:
             x, _ = rnn(x)
             x = x.flip([0])
