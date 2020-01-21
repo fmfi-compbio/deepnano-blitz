@@ -7,6 +7,10 @@ and **does not** require compute capability 6.2 (anything which can run Pytorch 
 
 Also contains bigger network, which has performance similar to Guppy.
 
+If you find this work useful, please cite:
+
+[Boža, Vladimír, Broňa Brejová, and Tomáš Vinař. "DeepNano: deep recurrent neural networks for base calling in MinION nanopore reads." PloS one 12.6 (2017).](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0178751)
+
 ## Limitations
 
 * Works only on 64bit linux.
