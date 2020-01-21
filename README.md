@@ -30,6 +30,12 @@ Also contains bigger network, which has performance similar to Guppy.
 For more accurate (but much slower) basecalling run:
 `deepnano2_caller.py --output out.fasta --directory reads_directory/ --threads 16 --network-type accurate`
 
+GPU caller:
+`deepnano2_caller_gpu.py --output out.fasta --directory reads_directory/`
+
+If you have new GPU (like RTX series) this might be faster:
+`deepnano2_caller_gpu.py --output out.fasta --directory reads_directory/ --half --batch-size 2048`
+
 ## Benchmarks
 
 Run on subset of 476 reads from [Klebsiela dataset](https://github.com/rrwick/Basecalling-comparison/tree/95bf07476f61cda79e6971f20f48c6ac83e634b3).

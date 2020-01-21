@@ -6,14 +6,49 @@ import os
 import numpy as np
 import datetime
 import deepnano2
-from multiprocessing import Pool
+from torch import multiprocessing as mp
+from torch.multiprocessing import Pool
 import torch
 from deepnano2.gpu_model import Net
+from tqdm import tqdm
+
+# TODO: change cuda:0 into something better
 
 step = 550
 pad = 25
-batch_size = 1024
 reads_in_group = 100
+torch.set_grad_enabled(False)
+
+def caller(model, qin, qout):
+    while True:
+        item = qin.get()
+        if item is None:
+            qout.put(None)
+            return 
+        read_marks, batch = item
+        net_result = model(batch)
+        qout.put((read_marks, net_result))
+
+def finalizer(fn, qin):
+    fo = open(fn, "w")
+    alph = np.array(["N", "A", "C", "G", "T"])
+    while True:
+        item = qin.get()
+        if item is None:
+            return
+        read_marks, res = item
+        res = res.to(device='cpu', dtype=torch.float32).numpy()
+        for read_mark, row in zip(read_marks, res):
+            am = np.argmax(row[pad:-pad], axis=1)
+            selection = np.ones(len(am), dtype=bool)
+            selection[1:] = am[1:] != am[:-1]
+            selection &= am != 0
+            seq = "".join(alph[am[selection]])
+            if read_mark is not None:
+                print(">%s" % read_mark, file=fo)
+            if len(seq) > 0:
+                print(seq, file=fo)
+
 
 def med_mad(x, factor=1.4826):
     """
@@ -30,47 +65,8 @@ def rescale_signal(signal):
     signal /= mad       
     return np.clip(signal, -2.5, 2.5)
 
-def call_group(group):
-    chunks = []
-    read_lens = []
-    for read_id, signal in group:
-        rl = 0
-        for i in range(0, len(signal), 3*step):
-            if i + 3*step + 6*pad > len(signal):
-                break
-            part = np.array(signal[i:i+3*step+6*pad])    
-            chunks.append(np.vstack([part, part * part]).T)
-            rl += 1
-        read_lens.append((read_id, rl))
-
-    chunks = np.stack(chunks)
-    outputs = []
-    for i in range(0, len(chunks), batch_size):
-        print("bs", len(chunks[i:i+batch_size]), datetime.datetime.now())
-        net_result = model(torch.Tensor(chunks[i:i+batch_size]).cuda()).detach().cpu().numpy()
-
-        for row in net_result:
-            outputs.append(row[pad:-pad])
-
-    last_f = 0
-    alph = np.array(["N", "A", "C", "G", "T"])
-    out = []
-    for read_id, rl in read_lens:
-        seq = []
-        last = 47
-        stacked = np.vstack(outputs[last_f:last_f+rl])
-        am = np.argmax(stacked, axis=1)
-        selection = np.ones(len(am), dtype=bool)
-        selection[1:] = am[1:] != am[:-1]
-        selection &= am != 0
-        seq = "".join(alph[am[selection]])
-
-        out.append((read_id, seq))
-        last_f += rl
-    return out
-
-
 if __name__ == '__main__':
+    mp.set_start_method('spawn')
     parser = argparse.ArgumentParser(description='Fast caller for ONT reads')
 
     parser.add_argument('--directory', type=str, nargs='*', help='One or more directories with reads')
@@ -81,6 +77,9 @@ if __name__ == '__main__':
     parser.add_argument("--network-type", choices=["fast", "accurate"], default="fast")
     parser.add_argument("--beam-size", type=int, default=None, help="Beam size (defaults 5 for fast and 20 for accurate. Use 1 to disable.")
     parser.add_argument("--beam-cut-threshold", type=float, default=None, help="Threshold for creating beams (higher means faster beam search, but smaller accuracy)")
+    parser.add_argument('--half', dest='half', action='store_true', help='Use half precision (fp16) during basecalling. On new graphics card, it might speed things up')
+    parser.add_argument('--batch-size', type=int, default=512, help='Batch size for calling, longer ones are usually faster, unless you get GPU OOM error')
+    parser.set_defaults(half=False)
 
     args = parser.parse_args()
 
@@ -102,29 +101,51 @@ if __name__ == '__main__':
     model.load_state_dict(torch.load(weights))
     model.eval()
     model.cuda()
+    if args.half:
+        model.half()
 
-    fout = open(args.output, "w")
+    model.share_memory()
 
-    done = 0
+    qcaller = mp.Queue(10)
+    qfinalizer = mp.Queue()
+    call_proc = mp.Process(target=caller, args=(model, qcaller, qfinalizer))
+    final_proc = mp.Process(target=finalizer, args=(args.output, qfinalizer))
+    call_proc.start()
+    final_proc.start()
 
-    group = []
-    print("start", datetime.datetime.now())
-    for fn in files:
+    chunk_dtype = torch.float16 if args.half else torch.float32
+
+    start_time = datetime.datetime.now()
+    print("start", start_time)
+    chunks = []
+    read_marks = []
+    for fn in tqdm(files):
         try:
             with get_fast5_file(fn, mode="r") as f5:
                 for read in f5.get_reads():
-                    group.append((read.get_read_id(), rescale_signal(read.get_raw_data())))
-                    if len(group) >= reads_in_group:
-                        for read_id, basecall in call_group(group):
-                            print(">%s" % read_id, file=fout)
-                            print(basecall, file=fout)
-                        group = []
+                    read_id = read.get_read_id()
+                    signal = rescale_signal(read.get_raw_data())
+                    for i in range(0, len(signal), 3*step):
+                        if i + 3*step + 6*pad > len(signal):
+                            break
+                        part = np.array(signal[i:i+3*step+6*pad])    
+                        if i == 0:
+                            read_marks.append(read_id)
+                        else:
+                            read_marks.append(None)
+                        chunks.append(np.vstack([part, part * part]).T)
+                        if len(chunks) == args.batch_size:
+                            qcaller.put((read_marks, torch.tensor(np.stack(chunks), dtype=chunk_dtype, device='cuda:0')))
+                            chunks = []
+                            read_marks = []
         except OSError:
             # TODO show something here
             pass
-    if len(group) > 0:
-        for read_id, basecall in call_group(group):
-            print(">%s" % read_id, file=fout)
-            print(basecall, file=fout)
+    if len(chunks) > 0:
+        qcaller.put((read_marks, torch.tensor(np.stack(chunks), dtype=chunk_dtype, device='cuda:0')))
 
-    print("fin", datetime.datetime.now())
+    qcaller.put(None)
+    call_proc.join()
+    final_proc.join()
+    print("fin", datetime.datetime.now() - start_time)
+
