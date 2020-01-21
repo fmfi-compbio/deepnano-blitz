@@ -52,6 +52,7 @@ happens, so realistic number is around 70 seconds).
 | DN-blitz, 4 threads XEON E5-2695 v4              | 32s              |    3.30M  | 75.5%                   | 83.9%           | 88.7%                   |
 | DN-blitz, 1 thread XEON E5-2695 v4, beam         | 2m 12s           |    799k   | 77.4%                   | 85.1%           | 89.2%                   |
 | DN-blitz, 4 threads XEON E5-2695 v4, beam        | 34s              |    3.10M  | 77.4%                   | 85.1%           | 89.2%                   |
+|------------------------------------------        |             -----|-----------|                ---------|            -----|                 --------|
 | DN-blitz, 1 thread i7-7700HQ (laptop)            | 1m 24s           |    1.25M  | 75.5%                   | 84.0%           | 88.7%                   |
 | DN-blitz, 4 threads i7-7700HQ (laptop)           | 28s              |    3.77M  | 75.5%                   | 84.0%           | 88.7%                   |
 | DN-blitz, 1 thread i7-7700HQ (laptop), beam      | 1m 33s           |    1.13M  | 77.5%                   | 85.1%           | 89.3%                   |
@@ -66,8 +67,10 @@ Note, that we are using 16 threads.
 | Guppy 3.3.0 hac, 16 threads XEON E5-2695 v4      | 18m 16s          | 82.5%                   | 89.8%           | 93.8%                   |
 | DN-blitz big, 16 threads XEON E5-2695 v4         | 12m 5s           | 82.1%                   | 89.1%           | 93.2%                   |
 | DN-blitz big, 16 threads XEON E5-2695 v4, beam   | 12m 30s          | 83.4%                   | 89.8%           | 93.6%                   |
+|--------------------------------------------------|              ----|                 --------|             ----|                  -------|
 | Guppy 3.3.0 hac, Titan XP GPU                    | 36s              | 82.5%                   | 89.8%           | 93.8%                   |
 | DN-blitz big, Titan XP GPU                       | 54s              | 82.2%                   | 89.2%           | 93.2%                   |
+|--------------------------------------------------|              ----|                 --------|             ----|                 -------|
 | DN-blitz big, Quadro M1200 GPU (laptop)          | 4m 5s            | 82.2%                   | 89.2%           | 93.2%                   |
 | Guppy 3.3.0 hac,  Quadro M1200 GPU (laptop)      | N/A              | N/A                     | N/A             | N/A                     |
 
