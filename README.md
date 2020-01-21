@@ -71,7 +71,7 @@ Note, that we are using 16 threads.
 | DN-blitz big, Quadro M1200 GPU (laptop)          | 4m 5s            | 82.2%                   | 89.2%           | 93.2%                   |
 | Guppy 3.3.0 hac,  Quadro M1200 GPU (laptop)      | N/A              | N/A                     | N/A             | N/A                     |
 
-TODO: beam search for GPU version
+TODO: beam search for GPU version and RTX results
 
 ### Accuracy on Human data
 
@@ -84,4 +84,4 @@ TODO: beam search for GPU version
 | DN-blitz                                         | 57.3%                   | 81.1%           | 86.8%                   |
 | DN-blitz, beam                                   | 55.2%                   | 81.6%           | 87.5%                   |
 | DN-blitz big                                     | 56.5%                   | 86.7%           | 91.9%                   |
-
+| DN-blitz big, beam                               | 59.2%                   | 87.6%           | 92.4%                   |

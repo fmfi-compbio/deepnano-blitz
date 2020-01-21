@@ -27,4 +27,4 @@ class Net(torch.nn.Module):
             x, _ = rnn(x)
             x = x.flip([0])
         x = x.permute((1,0,2))
-        return self.out(x)
+        return torch.nn.functional.softmax(self.out(x), dim=-1)

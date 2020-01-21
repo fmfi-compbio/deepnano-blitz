@@ -16,6 +16,7 @@ libc = "0.2.29"
 kth = "0.1.0"
 pyo3 = { version = "0.8.5", features = ["extension-module"] }
 fastapprox = {version = "0.3.0"}
+numpy = "0.7.0"
 
 [profile.release]
 lto=true

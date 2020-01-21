@@ -14,7 +14,7 @@ use conv_layer::*;
 use gru_layer::*;
 
 use libc::{c_float, c_int, c_longlong, c_void};
-use ndarray::{stack, Array, Axis, Ix1, Ix2};
+use ndarray::{stack, Array, Axis, Ix1, Ix2, ArrayBase, Data};
 use std::error::Error;
 use std::fs::File;
 use std::io::BufRead;
@@ -22,6 +22,8 @@ use std::io::BufReader;
 use std::ptr;
 
 use pyo3::prelude::*;
+use pyo3::wrap_pyfunction;
+use numpy::{PyArray2};
 
 extern "C" {
     fn mkl_cblas_jit_create_sgemm(
@@ -333,7 +335,12 @@ impl Caller {
     }
 }
 
-fn beam_search(result: &Array<f32, Ix2>, beam_size: usize, beam_cut_threshold: f32) -> String {
+#[pyfunction]
+fn beam_search_py(result: &PyArray2<f32>, beam_size: usize, beam_cut_threshold: f32) -> String {
+    beam_search(&result.as_array(), beam_size, beam_cut_threshold)
+}
+
+fn beam_search<D: Data<Elem=f32>>(result: &ArrayBase<D, Ix2>, beam_size: usize, beam_cut_threshold: f32) -> String {
     let alphabet: Vec<char> = "NACGT".chars().collect();
     // (base, what)
     let mut beam_prevs = vec![(0, 0)];
@@ -462,6 +469,7 @@ fn initialize_jit256() {
 #[pymodule]
 fn deepnano2(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Caller>()?;
+    m.add_wrapped(wrap_pyfunction!(beam_search_py))?;
 
     Ok(())
 }

@@ -32,22 +32,26 @@ def caller(model, qin, qout):
 def finalizer(fn, qin):
     fo = open(fn, "w")
     alph = np.array(["N", "A", "C", "G", "T"])
+    cur_rows = []
     while True:
         item = qin.get()
         if item is None:
+            if len(cur_rows) > 0:
+                stack = np.vstack(cur_rows)
+                seq = deepnano2.beam_search_py(stack, 5, 0.1)
+                print(seq, file=fo)
             return
         read_marks, res = item
         res = res.to(device='cpu', dtype=torch.float32).numpy()
         for read_mark, row in zip(read_marks, res):
-            am = np.argmax(row[pad:-pad], axis=1)
-            selection = np.ones(len(am), dtype=bool)
-            selection[1:] = am[1:] != am[:-1]
-            selection &= am != 0
-            seq = "".join(alph[am[selection]])
             if read_mark is not None:
+                if len(cur_rows) > 0:
+                    stack = np.vstack(cur_rows)
+                    seq = deepnano2.beam_search_py(stack, 5, 0.1)
+                    print(seq, file=fo)
+                    cur_rows = []
                 print(">%s" % read_mark, file=fo)
-            if len(seq) > 0:
-                print(seq, file=fo)
+            cur_rows.append(row[pad:-pad])
 
 
 def med_mad(x, factor=1.4826):
