@@ -45,7 +45,7 @@ if __name__ == '__main__':
     parser.add_argument("--output", type=str, required=True, help="Output FASTA file name")
     parser.add_argument("--threads", type=int, default=1, help="Number of threads for basecalling")
     parser.add_argument("--weights", type=str, default=None, help="Path to network weights")
-    parser.add_argument("--network-type", choices=["fast", "accurate"], default="fast")
+    parser.add_argument("--network-type", choices=["fast", "56", "64", "96", "accurate"], default="fast")
     parser.add_argument("--beam-size", type=int, default=None,
         help="Beam size (defaults 5 for fast and 20 for accurate). Use 1 to disable.")
     parser.add_argument("--beam-cut-threshold", type=float, default=None,

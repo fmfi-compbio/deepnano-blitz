@@ -142,6 +142,226 @@ impl Net for NetSmall {
     }
 }
 
+struct Conv33_56 {
+}
+
+impl ConvSizer for Conv33_56 {
+  fn input_features() -> usize { 2 }
+  fn output_features() -> usize { 56 }
+  fn conv_filter_size() -> usize { 33 }
+  fn sequence_size() -> usize { 3*STEP + 6*PAD }
+  fn pool_kernel() -> usize { 3 }
+}
+
+struct GRU56 {
+}
+
+static mut JITTER56: *mut c_void = ptr::null_mut();
+static mut SGEMM56: SgemmJitKernelT = None;
+
+impl GRUSizer for GRU56 {
+  fn sequence_size() -> usize { STEP + 2*PAD }
+  fn output_features() -> usize { 56 }
+  fn jitter() -> *mut c_void { unsafe { JITTER56 } }
+  fn sgemm() -> SgemmJitKernelT { unsafe { SGEMM56 } }
+}
+
+struct Net56 {
+    conv_layer1: ConvLayer<Conv33_56>,
+    rnn_layer1: BiGRULayer<GRU56>,
+    rnn_layer2: BiGRULayer<GRU56>,
+    out_layer: OutLayer,
+}
+
+impl Net56 {
+    fn new(filename: &str) -> Result<Net56, Box<dyn Error>> {
+        let netfile = File::open(filename)?;
+        let mut bufnetfile = BufReader::new(&netfile);
+        let conv_layer1 = ConvLayer::new(&mut bufnetfile)?;
+        let rnn_layer1 = BiGRULayer::new(&mut bufnetfile)?;
+        let rnn_layer2 = BiGRULayer::new(&mut bufnetfile)?;
+        let out_layer = OutLayer::new(&mut bufnetfile)?;
+        Ok(Net56 {
+            conv_layer1,
+            rnn_layer1,
+            rnn_layer2,
+            out_layer,
+        })
+    }
+}
+
+impl Net for Net56 {
+    fn predict(&mut self, chunk: &[f32]) -> Array<f32, Ix2> {
+        let scaled_data = Array::from_shape_vec(
+            (chunk.len(), 2),
+            chunk
+                .iter()
+                .flat_map(|&x| {
+                    use std::iter::once;
+                    let scaled = x.max(-2.5).min(2.5);
+                    once(scaled).chain(once(scaled * scaled))
+                })
+                .collect::<Vec<_>>(),
+        )
+        .unwrap();
+
+        let r1 = self.conv_layer1.calc(&scaled_data);
+        let r2 = self.rnn_layer1.calc(&r1);
+        let r3 = self.rnn_layer2.calc(&r2);
+        let out = self.out_layer.calc(&r3);
+
+        out
+    }
+}
+
+
+struct Conv33_64 {
+}
+
+impl ConvSizer for Conv33_64 {
+  fn input_features() -> usize { 2 }
+  fn output_features() -> usize { 64 }
+  fn conv_filter_size() -> usize { 33 }
+  fn sequence_size() -> usize { 3*STEP + 6*PAD }
+  fn pool_kernel() -> usize { 3 }
+}
+
+struct GRU64 {
+}
+
+static mut JITTER64: *mut c_void = ptr::null_mut();
+static mut SGEMM64: SgemmJitKernelT = None;
+
+impl GRUSizer for GRU64 {
+  fn sequence_size() -> usize { STEP + 2*PAD }
+  fn output_features() -> usize { 64 }
+  fn jitter() -> *mut c_void { unsafe { JITTER64 } }
+  fn sgemm() -> SgemmJitKernelT { unsafe { SGEMM64 } }
+}
+
+struct Net64 {
+    conv_layer1: ConvLayer<Conv33_64>,
+    rnn_layer1: BiGRULayer<GRU64>,
+    rnn_layer2: BiGRULayer<GRU64>,
+    out_layer: OutLayer,
+}
+
+impl Net64 {
+    fn new(filename: &str) -> Result<Net64, Box<dyn Error>> {
+        let netfile = File::open(filename)?;
+        let mut bufnetfile = BufReader::new(&netfile);
+        let conv_layer1 = ConvLayer::new(&mut bufnetfile)?;
+        let rnn_layer1 = BiGRULayer::new(&mut bufnetfile)?;
+        let rnn_layer2 = BiGRULayer::new(&mut bufnetfile)?;
+        let out_layer = OutLayer::new(&mut bufnetfile)?;
+        Ok(Net64 {
+            conv_layer1,
+            rnn_layer1,
+            rnn_layer2,
+            out_layer,
+        })
+    }
+}
+
+impl Net for Net64 {
+    fn predict(&mut self, chunk: &[f32]) -> Array<f32, Ix2> {
+        let scaled_data = Array::from_shape_vec(
+            (chunk.len(), 2),
+            chunk
+                .iter()
+                .flat_map(|&x| {
+                    use std::iter::once;
+                    let scaled = x.max(-2.5).min(2.5);
+                    once(scaled).chain(once(scaled * scaled))
+                })
+                .collect::<Vec<_>>(),
+        )
+        .unwrap();
+
+        let r1 = self.conv_layer1.calc(&scaled_data);
+        let r2 = self.rnn_layer1.calc(&r1);
+        let r3 = self.rnn_layer2.calc(&r2);
+        let out = self.out_layer.calc(&r3);
+
+        out
+    }
+}
+
+
+struct Conv33_96 {
+}
+
+impl ConvSizer for Conv33_96 {
+  fn input_features() -> usize { 2 }
+  fn output_features() -> usize { 96 }
+  fn conv_filter_size() -> usize { 33 }
+  fn sequence_size() -> usize { 3*STEP + 6*PAD }
+  fn pool_kernel() -> usize { 3 }
+}
+
+struct GRU96 {
+}
+
+static mut JITTER96: *mut c_void = ptr::null_mut();
+static mut SGEMM96: SgemmJitKernelT = None;
+
+impl GRUSizer for GRU96 {
+  fn sequence_size() -> usize { STEP + 2*PAD }
+  fn output_features() -> usize { 96 }
+  fn jitter() -> *mut c_void { unsafe { JITTER96 } }
+  fn sgemm() -> SgemmJitKernelT { unsafe { SGEMM96 } }
+}
+
+struct Net96 {
+    conv_layer1: ConvLayer<Conv33_96>,
+    rnn_layer1: BiGRULayer<GRU96>,
+    rnn_layer2: BiGRULayer<GRU96>,
+    out_layer: OutLayer,
+}
+
+impl Net96 {
+    fn new(filename: &str) -> Result<Net96, Box<dyn Error>> {
+        let netfile = File::open(filename)?;
+        let mut bufnetfile = BufReader::new(&netfile);
+        let conv_layer1 = ConvLayer::new(&mut bufnetfile)?;
+        let rnn_layer1 = BiGRULayer::new(&mut bufnetfile)?;
+        let rnn_layer2 = BiGRULayer::new(&mut bufnetfile)?;
+        let out_layer = OutLayer::new(&mut bufnetfile)?;
+        Ok(Net96 {
+            conv_layer1,
+            rnn_layer1,
+            rnn_layer2,
+            out_layer,
+        })
+    }
+}
+
+impl Net for Net96 {
+    fn predict(&mut self, chunk: &[f32]) -> Array<f32, Ix2> {
+        let scaled_data = Array::from_shape_vec(
+            (chunk.len(), 2),
+            chunk
+                .iter()
+                .flat_map(|&x| {
+                    use std::iter::once;
+                    let scaled = x.max(-2.5).min(2.5);
+                    once(scaled).chain(once(scaled * scaled))
+                })
+                .collect::<Vec<_>>(),
+        )
+        .unwrap();
+
+        let r1 = self.conv_layer1.calc(&scaled_data);
+        let r2 = self.rnn_layer1.calc(&r1);
+        let r3 = self.rnn_layer2.calc(&r2);
+        let out = self.out_layer.calc(&r3);
+
+        out
+    }
+}
+
+
+
 struct Conv33_256 {
 }
 
@@ -235,6 +455,24 @@ impl Caller {
                 initialize_jit256();
               }
             }
+        } else if net_type == "56" {
+            unsafe {
+              if JITTER56 == ptr::null_mut() {
+                initialize_jit56();
+              }
+            }
+        } else if net_type == "64" {
+            unsafe {
+              if JITTER56 == ptr::null_mut() {
+                initialize_jit64();
+              }
+            }
+        } else if net_type == "96" {
+            unsafe {
+              if JITTER56 == ptr::null_mut() {
+                initialize_jit96();
+              }
+            }
         } else {
             unsafe {
               if JITTER48 == ptr::null_mut() {
@@ -244,6 +482,12 @@ impl Caller {
         }
         let net: Box<dyn Net> = if net_type == "accurate" {
             Box::new(NetBig::new(&path).unwrap())
+        } else if net_type == "56" { 
+            Box::new(Net56::new(&path).unwrap())
+        } else if net_type == "64" { 
+            Box::new(Net64::new(&path).unwrap())
+        } else if net_type == "96" { 
+            Box::new(Net96::new(&path).unwrap())
         } else {
             Box::new(NetSmall::new(&path).unwrap())
         };
@@ -441,6 +685,76 @@ fn initialize_jit48() {
         );
 
         SGEMM48 = mkl_jit_get_sgemm_ptr(JITTER48);
+    }
+}
+
+fn initialize_jit56() {
+    unsafe {
+        JITTER56 = ptr::null_mut();
+        // TODO: check
+        let status = mkl_cblas_jit_create_sgemm(
+            &mut JITTER56,
+            101,
+            111,
+            111,
+            1,
+            56 * 3,
+            56,
+            1.0,
+            56,
+            56 * 3,
+            0.0,
+            56 * 3,
+        );
+
+        SGEMM56 = mkl_jit_get_sgemm_ptr(JITTER56);
+    }
+}
+
+fn initialize_jit64() {
+    unsafe {
+        JITTER64 = ptr::null_mut();
+        // TODO: check
+        let status = mkl_cblas_jit_create_sgemm(
+            &mut JITTER64,
+            101,
+            111,
+            111,
+            1,
+            64 * 3,
+            64,
+            1.0,
+            64,
+            64 * 3,
+            0.0,
+            64 * 3,
+        );
+
+        SGEMM64 = mkl_jit_get_sgemm_ptr(JITTER64);
+    }
+}
+
+
+fn initialize_jit96() {
+    unsafe {
+        JITTER96 = ptr::null_mut();
+        // TODO: check
+        let status = mkl_cblas_jit_create_sgemm(
+            &mut JITTER96,
+            101,
+            111,
+            111,
+            1,
+            96 * 3,
+            96,
+            1.0,
+            96,
+            96 * 3,
+            0.0,
+            96 * 3,
+        );
+
+        SGEMM96 = mkl_jit_get_sgemm_ptr(JITTER96);
     }
 }
 
