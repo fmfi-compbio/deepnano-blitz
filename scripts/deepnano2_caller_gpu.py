@@ -24,10 +24,11 @@ def caller(model, qin, qout):
         item = qin.get()
         if item is None:
             qout.put(None)
-            return 
+            break 
         read_marks, batch = item
         net_result = model(batch)
         qout.put((read_marks, net_result))
+    item = qin.get()
 
 def finalizer(fn, qin):
     fo = open(fn, "w")
@@ -149,7 +150,8 @@ if __name__ == '__main__':
         qcaller.put((read_marks, torch.tensor(np.stack(chunks), dtype=chunk_dtype, device='cuda:0')))
 
     qcaller.put(None)
-    call_proc.join()
     final_proc.join()
+    qcaller.put(None)
+    call_proc.join()
     print("fin", datetime.datetime.now() - start_time)
 
