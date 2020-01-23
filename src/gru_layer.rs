@@ -43,19 +43,24 @@ impl<GS: GRUSizer> GRULayer<GS> {
         let bor = load1dmatrix(f)?;
         let biu = load1dmatrix(f)?;
         let bou = load1dmatrix(f)?;
-        let wourn = stack!(Axis(1), -wou, -wor, woo); //.t().to_owned();
-        let wiurn = stack!(Axis(1), -wiu, -wir, wio);
-        let biur = stack!(Axis(0), -biu - bou, -bir - bor);
+        let wourn = align2d(stack!(Axis(1), -wou, -wor, woo)); //.t().to_owned();
+        let wiurn = align2d(stack!(Axis(1), -wiu, -wir, wio));
+        let biur = align1d(stack!(Axis(0), -biu - bou, -bir - bor));
+        let input_proc = align2d(Array::from_elem((GS::sequence_size(), GS::output_features() * 3), 0.0));
+        let state = align1d(Array::from_elem(GS::output_features(), 0.0));
+        let state_proc = align1d(Array::from_elem(GS::output_features() * 4, 0.0));
+        let output = align2d(Array::from_elem((GS::sequence_size(), GS::output_features()), 0.0));
+
         Ok(GRULayer {
             wourn: wourn,
             wiurn: wiurn,
             biur: biur,
             bio: bio,
             boo: boo,
-            input_proc: Array::from_elem((GS::sequence_size(), GS::output_features() * 3), 0.0),
-            state: Array::from_elem(GS::output_features(), 0.0f32),
-            output: Array::from_elem((GS::sequence_size(), GS::output_features()), 0.0f32),
-            state_proc: Array::from_elem(GS::output_features() * 4, 0.0f32),
+            input_proc,
+            state,
+            output,
+            state_proc,
             phantom: PhantomData
         })
 

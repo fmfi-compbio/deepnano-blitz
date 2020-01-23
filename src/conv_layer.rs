@@ -13,7 +13,6 @@ pub trait ConvSizer {
   fn pool_kernel() -> usize;
 }
 
-
 pub struct ConvLayer<CS: ConvSizer> {
     w: Array<f32, Ix2>,
     b: Array<f32, Ix1>,
@@ -28,9 +27,9 @@ impl<CS: ConvSizer> ConvLayer<CS> {
         Ok(ConvLayer {
             w: load2dmatrix(f)?,
             b: load1dmatrix(f)?,
-            im2col: Array::from_elem((CS::sequence_size(), CS::conv_filter_size() * CS::input_features()), 0.0),
-            convout: Array::from_elem((CS::sequence_size(), CS::output_features()), 0.0),
-            pooled_out: Array::from_elem((CS::sequence_size() / CS::pool_kernel(), CS::output_features()), 0.0),
+            im2col: align2d(Array::from_elem((CS::sequence_size(), CS::conv_filter_size() * CS::input_features()), 0.0)),
+            convout: align2d(Array::from_elem((CS::sequence_size(), CS::output_features()), 0.0)),
+            pooled_out: align2d(Array::from_elem((CS::sequence_size() / CS::pool_kernel(), CS::output_features()), 0.0)),
             phantom: PhantomData
         })
     }
