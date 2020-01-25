@@ -52,16 +52,17 @@ happens, so realistic number is around 70 seconds).
 
 | Basecaller                                       | Time to basecall | Signals/s | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
 |--------------------------------------------------|             ----:|----------:|                --------:|            ----:|                 -------:|
-| Guppy 3.3.0 fast, 1 thread XEON E5-2695 v4       | 26m 0s           |    67,6k  | 80.4%                   | 87.6%           | 91.8%                   |
-| Guppy 3.3.0 fast, 4 threads XEON E5-2695 v4      | 6m 54s           |    254k   | 80.4%                   | 87.6%           | 91.8%                   |
-| DN-blitz, 1 thread XEON E5-2695 v4               | 2m 3s            |    857k   | 75.5%                   | 83.9%           | 88.7%                   |
-| DN-blitz, 4 threads XEON E5-2695 v4              | 32s              |    3.30M  | 75.5%                   | 83.9%           | 88.7%                   |
-| DN-blitz, 1 thread XEON E5-2695 v4, beam         | 2m 12s           |    799k   | 77.4%                   | 85.1%           | 89.2%                   |
-| DN-blitz, 4 threads XEON E5-2695 v4, beam        | 34s              |    3.10M  | 77.4%                   | 85.1%           | 89.2%                   |
+| Guppy 3.3.0 fast, 1 thread XEON E5-2695 v4       | 26m 0s           |    67,6k  | 81.3%                   | 88.4%           | 92.4%                   |
+| Guppy 3.3.0 fast, 4 threads XEON E5-2695 v4      | 6m 54s           |    254k   | 81.3%                   | 88.4%           | 92.4%                   |
+| DN-blitz, 1 thread XEON E5-2695 v4               | 2m 3s            |    857k   | 75.6%                   | 84.1%           | 88.8%                   |
+| DN-blitz, 4 threads XEON E5-2695 v4              | 32s              |    3.30M  | 75.6%                   | 84.1%           | 88.8%                   |
+| DN-blitz, 1 thread XEON E5-2695 v4, beam         | 2m 12s           |    799k   | 77.6%                   | 85.1%           | 89.4%                   |
+| DN-blitz, 4 threads XEON E5-2695 v4, beam        | 34s              |    3.10M  | 77.6%                   | 85.1%           | 89.4%                   |
 | DN-blitz, 56 width, 1 thread, XEON               | 2m 56s           |           |                         |                 |                         |
 | DN-blitz, 56 width, 4 thread, XEON               | 47s              |           |                         |                 |                         |
 | DN-blitz, 64 width, 1 thread, XEON               | 4m 21s           |           |                         |                 |                         |
-| DN-blitz, 96 width, 1 thread, XEON               | 8m 37s           |           |                         |                 |                         |
+| DN-blitz, 96 width, 1 thread, XEON               | 8m 37s           |           | 79.5%                   | 87.5%           | 91.9%                   |
+| DN-blitz, 96 width, 1 thread, XEON, beam         | 8m 37s           |           | 81.4%                   | 88.4%           | 92.3%                   |
 |------------------------------------------        |             -----|-----------|                ---------|            -----|                 --------|
 | DN-blitz, 1 thread i7-7700HQ (laptop)            | 1m 24s           |    1.25M  | 75.5%                   | 84.0%           | 88.7%                   |
 | DN-blitz, 4 threads i7-7700HQ (laptop)           | 28s              |    3.77M  | 75.5%                   | 84.0%           | 88.7%                   |
