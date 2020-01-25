@@ -205,10 +205,11 @@ impl Net for Net56 {
         )
         .unwrap();
 
-        let r1 = self.conv_layer1.calc(&scaled_data);
-        let r2 = self.rnn_layer1.calc(&r1);
-        let r3 = self.rnn_layer2.calc(&r2);
-        let out = self.out_layer.calc(&r3);
+        self.conv_layer1.calc(&scaled_data);
+        self.rnn_layer1.calc(&self.conv_layer1.pooled_out);
+        self.rnn_layer2.calc(&self.rnn_layer1.bwd.output);
+        let out = self.out_layer.calc(&self.rnn_layer2.bwd.output);
+
 
         out
     }
@@ -278,15 +279,86 @@ impl Net for Net64 {
         )
         .unwrap();
 
-        let r1 = self.conv_layer1.calc(&scaled_data);
-        let r2 = self.rnn_layer1.calc(&r1);
-        let r3 = self.rnn_layer2.calc(&r2);
-        let out = self.out_layer.calc(&r3);
+        self.conv_layer1.calc(&scaled_data);
+        self.rnn_layer1.calc(&self.conv_layer1.pooled_out);
+        self.rnn_layer2.calc(&self.rnn_layer1.bwd.output);
+        let out = self.out_layer.calc(&self.rnn_layer2.bwd.output);
 
         out
     }
 }
 
+struct Conv33_80 {
+}
+
+impl ConvSizer for Conv33_80 {
+  fn input_features() -> usize { 2 }
+  fn output_features() -> usize { 80 }
+  fn conv_filter_size() -> usize { 33 }
+  fn sequence_size() -> usize { 3*STEP + 6*PAD }
+  fn pool_kernel() -> usize { 3 }
+}
+
+struct GRU80 {
+}
+
+static mut JITTER80: *mut c_void = ptr::null_mut();
+static mut SGEMM80: SgemmJitKernelT = None;
+
+impl GRUSizer for GRU80 {
+  fn sequence_size() -> usize { STEP + 2*PAD }
+  fn output_features() -> usize { 80 }
+  fn jitter() -> *mut c_void { unsafe { JITTER80 } }
+  fn sgemm() -> SgemmJitKernelT { unsafe { SGEMM80 } }
+}
+
+struct Net80 {
+    conv_layer1: ConvLayer<Conv33_80>,
+    rnn_layer1: BiGRULayer<GRU80>,
+    rnn_layer2: BiGRULayer<GRU80>,
+    out_layer: OutLayer,
+}
+
+impl Net80 {
+    fn new(filename: &str) -> Result<Net80, Box<dyn Error>> {
+        let netfile = File::open(filename)?;
+        let mut bufnetfile = BufReader::new(&netfile);
+        let conv_layer1 = ConvLayer::new(&mut bufnetfile)?;
+        let rnn_layer1 = BiGRULayer::new(&mut bufnetfile)?;
+        let rnn_layer2 = BiGRULayer::new(&mut bufnetfile)?;
+        let out_layer = OutLayer::new(&mut bufnetfile)?;
+        Ok(Net80 {
+            conv_layer1,
+            rnn_layer1,
+            rnn_layer2,
+            out_layer,
+        })
+    }
+}
+
+impl Net for Net80 {
+    fn predict(&mut self, chunk: &[f32]) -> Array<f32, Ix2> {
+        let scaled_data = Array::from_shape_vec(
+            (chunk.len(), 2),
+            chunk
+                .iter()
+                .flat_map(|&x| {
+                    use std::iter::once;
+                    let scaled = x.max(-2.5).min(2.5);
+                    once(scaled).chain(once(scaled * scaled))
+                })
+                .collect::<Vec<_>>(),
+        )
+        .unwrap();
+
+        self.conv_layer1.calc(&scaled_data);
+        self.rnn_layer1.calc(&self.conv_layer1.pooled_out);
+        self.rnn_layer2.calc(&self.rnn_layer1.bwd.output);
+        let out = self.out_layer.calc(&self.rnn_layer2.bwd.output);
+
+        out
+    }
+}
 
 struct Conv33_96 {
 }
@@ -351,10 +423,10 @@ impl Net for Net96 {
         )
         .unwrap();
 
-        let r1 = self.conv_layer1.calc(&scaled_data);
-        let r2 = self.rnn_layer1.calc(&r1);
-        let r3 = self.rnn_layer2.calc(&r2);
-        let out = self.out_layer.calc(&r3);
+        self.conv_layer1.calc(&scaled_data);
+        self.rnn_layer1.calc(&self.conv_layer1.pooled_out);
+        self.rnn_layer2.calc(&self.rnn_layer1.bwd.output);
+        let out = self.out_layer.calc(&self.rnn_layer2.bwd.output);
 
         out
     }
@@ -449,7 +521,7 @@ struct Caller {
 impl Caller {
     #[new]
     fn new(obj: &PyRawObject, net_type: &str, path: &str, beam_size: usize, beam_cut_threshold: f32) {
-        if net_type == "accurate" {
+        if net_type == "256" {
             unsafe {
               if JITTER256 == ptr::null_mut() {
                 initialize_jit256();
@@ -463,13 +535,19 @@ impl Caller {
             }
         } else if net_type == "64" {
             unsafe {
-              if JITTER56 == ptr::null_mut() {
+              if JITTER64 == ptr::null_mut() {
                 initialize_jit64();
+              }
+            }
+        } else if net_type == "80" {
+            unsafe {
+              if JITTER80 == ptr::null_mut() {
+                initialize_jit80();
               }
             }
         } else if net_type == "96" {
             unsafe {
-              if JITTER56 == ptr::null_mut() {
+              if JITTER96 == ptr::null_mut() {
                 initialize_jit96();
               }
             }
@@ -480,12 +558,14 @@ impl Caller {
               }
             }
         }
-        let net: Box<dyn Net> = if net_type == "accurate" {
+        let net: Box<dyn Net> = if net_type == "256" {
             Box::new(NetBig::new(&path).unwrap())
         } else if net_type == "56" { 
             Box::new(Net56::new(&path).unwrap())
         } else if net_type == "64" { 
             Box::new(Net64::new(&path).unwrap())
+        } else if net_type == "80" { 
+            Box::new(Net80::new(&path).unwrap())
         } else if net_type == "96" { 
             Box::new(Net96::new(&path).unwrap())
         } else {
@@ -731,6 +811,29 @@ fn initialize_jit64() {
         );
 
         SGEMM64 = mkl_jit_get_sgemm_ptr(JITTER64);
+    }
+}
+
+fn initialize_jit80() {
+    unsafe {
+        JITTER80 = ptr::null_mut();
+        // TODO: check
+        let status = mkl_cblas_jit_create_sgemm(
+            &mut JITTER80,
+            101,
+            111,
+            111,
+            1,
+            80 * 3,
+            80,
+            1.0,
+            80,
+            80 * 3,
+            0.0,
+            80 * 3,
+        );
+
+        SGEMM80 = mkl_jit_get_sgemm_ptr(JITTER80);
     }
 }
 
