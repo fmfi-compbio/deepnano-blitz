@@ -133,10 +133,10 @@ impl Net for NetSmall {
         )
         .unwrap();
 
-        let r1 = self.conv_layer1.calc(&scaled_data);
-        let r2 = self.rnn_layer1.calc(&r1);
-        let r3 = self.rnn_layer2.calc(&r2);
-        let out = self.out_layer.calc(&r3);
+        self.conv_layer1.calc(&scaled_data);
+        self.rnn_layer1.calc(&self.conv_layer1.pooled_out);
+        self.rnn_layer2.calc(&self.rnn_layer1.bwd.output);
+        let out = self.out_layer.calc(&self.rnn_layer2.bwd.output);
 
         out
     }
@@ -427,11 +427,11 @@ impl Net for NetBig {
         )
         .unwrap();
 
-        let r1 = self.conv_layer1.calc(&scaled_data);
-        let r2 = self.rnn_layer1.calc(&r1);
-        let r3 = self.rnn_layer2.calc(&r2);
-        let r4 = self.rnn_layer3.calc(&r3);
-        let out = self.out_layer.calc(&r4);
+        self.conv_layer1.calc(&scaled_data);
+        self.rnn_layer1.calc(&self.conv_layer1.pooled_out);
+        self.rnn_layer2.calc(&self.rnn_layer1.bwd.output);
+        self.rnn_layer3.calc(&self.rnn_layer2.bwd.output);
+        let out = self.out_layer.calc(&self.rnn_layer3.bwd.output);
 
         out
     }

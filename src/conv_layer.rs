@@ -13,12 +13,12 @@ pub trait ConvSizer {
   fn pool_kernel() -> usize;
 }
 
-
 pub struct ConvLayer<CS: ConvSizer> {
     w: Array<f32, Ix2>,
     b: Array<f32, Ix1>,
     im2col: Array<f32, Ix2>,
     convout: Array<f32, Ix2>,
+    pub pooled_out: Array<f32, Ix2>,
     phantom: PhantomData<CS>
 }
 
@@ -27,14 +27,14 @@ impl<CS: ConvSizer> ConvLayer<CS> {
         Ok(ConvLayer {
             w: load2dmatrix(f)?,
             b: load1dmatrix(f)?,
-            im2col: Array::from_elem((CS::sequence_size(), CS::conv_filter_size() * CS::input_features()), 0.0),
-            convout: Array::from_elem((CS::sequence_size(), CS::output_features()), 0.0),
+            im2col: align2d(Array::from_elem((CS::sequence_size(), CS::conv_filter_size() * CS::input_features()), 0.0)),
+            convout: align2d(Array::from_elem((CS::sequence_size(), CS::output_features()), 0.0)),
+            pooled_out: align2d(Array::from_elem((CS::sequence_size() / CS::pool_kernel(), CS::output_features()), 0.0)),
             phantom: PhantomData
         })
     }
     
-    fn max_pool(input: &Array<f32, Ix2>) -> Array<f32, Ix2> {
-        let mut out = Array::from_elem((input.shape()[0] / CS::pool_kernel(), input.shape()[1]), 0.0f32);
+    fn max_pool(input: &Array<f32, Ix2>, out: &mut Array<f32, Ix2>) {
 
         unsafe {
             let out_ptr = out.as_mut_ptr();
@@ -57,12 +57,10 @@ impl<CS: ConvSizer> ConvLayer<CS> {
                 in_offset += 2 * out.shape()[1] as isize;
             }
         }
-
-        out
     }
 
 
-    pub fn calc(&mut self, input: &Array<f32, Ix2>) -> Array<f32, Ix2> {
+    pub fn calc(&mut self, input: &Array<f32, Ix2>) {
         unsafe {
             let input_ptr = input.as_ptr();
             let im2col_ptr = self.im2col.as_mut_ptr();
@@ -79,16 +77,14 @@ impl<CS: ConvSizer> ConvLayer<CS> {
             }
         }
         general_mat_mul(1.0, &self.im2col, &self.w, 0.0, &mut self.convout);
-        let mut pooled = Self::max_pool(&self.convout);
-        pooled += &self.b;
+        let mut pooled = Self::max_pool(&self.convout, &mut self.pooled_out);
+        self.pooled_out += &self.b;
         unsafe {
-            let ptr = pooled.as_mut_ptr();
-            for i in 0..pooled.len() as isize {
+            let ptr = self.pooled_out.as_mut_ptr();
+            for i in 0..self.pooled_out.len() as isize {
                 *ptr.offset(i) = fastapprox::faster::tanh(*ptr.offset(i))
             }
         }
-
-        pooled
     }
 }
 

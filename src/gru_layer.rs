@@ -23,6 +23,9 @@ pub struct GRULayer<GS: GRUSizer> {
     bio: Array<f32, Ix1>,
     boo: Array<f32, Ix1>,
     input_proc: Array<f32, Ix2>, //    h0: Array<f32, Ix1>,
+    state: Array<f32, Ix1>,
+    pub output: Array<f32, Ix2>,
+    state_proc: Array<f32, Ix1>,
     phantom: PhantomData<GS>
 }
 
@@ -40,49 +43,57 @@ impl<GS: GRUSizer> GRULayer<GS> {
         let bor = load1dmatrix(f)?;
         let biu = load1dmatrix(f)?;
         let bou = load1dmatrix(f)?;
-        let wourn = stack!(Axis(1), -wou, -wor, woo); //.t().to_owned();
-        let wiurn = stack!(Axis(1), -wiu, -wir, wio);
-        let biur = stack!(Axis(0), -biu - bou, -bir - bor);
+        let wourn = align2d(stack!(Axis(1), -wou, -wor, woo)); //.t().to_owned();
+        let wiurn = align2d(stack!(Axis(1), -wiu, -wir, wio));
+        let biur = align1d(stack!(Axis(0), -biu - bou, -bir - bor));
+        let input_proc = align2d(Array::from_elem((GS::sequence_size(), GS::output_features() * 3), 0.0));
+        let state = align1d(Array::from_elem(GS::output_features(), 0.0));
+        let state_proc = align1d(Array::from_elem(GS::output_features() * 4, 0.0));
+        let output = align2d(Array::from_elem((GS::sequence_size(), GS::output_features()), 0.0));
+
         Ok(GRULayer {
             wourn: wourn,
             wiurn: wiurn,
             biur: biur,
             bio: bio,
             boo: boo,
-            input_proc: Array::from_elem((GS::sequence_size(), GS::output_features() * 3), 0.0),
+            input_proc,
+            state,
+            output,
+            state_proc,
             phantom: PhantomData
         })
 
         // TODO: assert sizes
     }
 
-    pub fn calc(&mut self, input: &Array<f32, Ix2>) -> Array<f32, Ix2> {
-        let mut state = Array::from_elem(GS::output_features(), 0.0f32);
-        let mut output = Array::from_elem((GS::sequence_size(), GS::output_features()), 0.0f32);
+    pub fn calc(&mut self, input: &Array<f32, Ix2>) {
+//        let mut state = Array::from_elem(GS::output_features(), 0.0f32);
+//        let mut output = Array::from_elem((GS::sequence_size(), GS::output_features()), 0.0f32);
         general_mat_mul(1.0, &input, &self.wiurn, 0.0, &mut self.input_proc);
 
-        let mut state_proc = Array::from_elem(GS::output_features() * 3, 0.0f32);
-        let mut new_val = Array::from_elem(GS::output_features(), 0.0f32);
+//        let mut state_proc = Array::from_elem(GS::output_features() * 3, 0.0f32);
+//        let mut new_val = Array::from_elem(GS::output_features(), 0.0f32);
 
         let n_steps = self.input_proc.shape()[0];
 
         for (num, sample) in self.input_proc.outer_iter().enumerate() {
             unsafe {
                 let old_st_ptr = if num == 0 {
-                    state.as_mut_ptr()
+                    self.state.as_mut_ptr()
                 } else {
-                    output.as_mut_ptr().offset(((n_steps - num) as isize) * GS::output_features() as isize)
+                    self.output.as_mut_ptr().offset(((n_steps - num) as isize) * GS::output_features() as isize)
                 };
                 GS::sgemm().unwrap()(
                     GS::jitter(),
                     old_st_ptr,
                     self.wourn.as_mut_ptr(),
-                    state_proc.as_mut_ptr(),
+                    self.state_proc.as_mut_ptr(),
                 );
             }
             {
                 unsafe {
-                    let ptr = state_proc.as_mut_ptr();
+                    let ptr = self.state_proc.as_mut_ptr();
                     let sptr = sample.as_ptr();
                     let bptr = self.biur.as_ptr();
 		    for i in 0..2*GS::output_features() as isize {
@@ -92,16 +103,16 @@ impl<GS: GRUSizer> GRULayer<GS> {
             }
 
             unsafe {
-                let nvptr = new_val.as_mut_ptr();
-                let ptr = state_proc.as_ptr();
+                let ptr = self.state_proc.as_mut_ptr();
+                let nvptr = ptr.offset(3*GS::output_features() as isize);
                 let sptr = sample.as_ptr();
-                let stptr = output.as_mut_ptr().offset((n_steps - num - 1) as isize * GS::output_features() as isize);
+                let stptr = self.output.as_mut_ptr().offset((n_steps - num - 1) as isize * GS::output_features() as isize);
                 let biptr = self.bio.as_ptr();
                 let boptr = self.boo.as_ptr();
                 let old_st_ptr = if num == 0 {
-                    state.as_mut_ptr()
+                    self.state.as_mut_ptr()
                 } else {
-                    output.as_mut_ptr().offset(((n_steps - num) as isize) * GS::output_features() as isize)
+                    self.output.as_mut_ptr().offset(((n_steps - num) as isize) * GS::output_features() as isize)
                 };
 
                 for i in 0..GS::output_features() as isize {
@@ -117,13 +128,12 @@ impl<GS: GRUSizer> GRULayer<GS> {
                 }
             }
         }
-        output
     }
 }
 
 pub struct BiGRULayer<GS: GRUSizer> {
     fwd: GRULayer<GS>,
-    bwd: GRULayer<GS>,
+    pub bwd: GRULayer<GS>,
 }
 
 impl<GS: GRUSizer> BiGRULayer<GS> {
@@ -134,10 +144,8 @@ impl<GS: GRUSizer> BiGRULayer<GS> {
         })
     }
 
-    pub fn calc(&mut self, input: &Array<f32, Ix2>) -> Array<f32, Ix2> {
-        let fwd_res = self.fwd.calc(input);
-        let bwd_res = self.bwd.calc(&fwd_res);
-
-        return bwd_res;
+    pub fn calc(&mut self, input: &Array<f32, Ix2>) {
+        self.fwd.calc(input);
+        self.bwd.calc(&self.fwd.output);
     }
 }
