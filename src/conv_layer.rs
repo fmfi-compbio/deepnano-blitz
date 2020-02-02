@@ -4,6 +4,7 @@ use crate::matrix_load::*;
 use std::io::BufRead;
 use std::error::Error;
 use std::marker::PhantomData;
+use crate::activations;
 
 pub trait ConvSizer {
   fn output_features() -> usize;
@@ -82,7 +83,7 @@ impl<CS: ConvSizer> ConvLayer<CS> {
         unsafe {
             let ptr = self.pooled_out.as_mut_ptr();
             for i in 0..self.pooled_out.len() as isize {
-                *ptr.offset(i) = fastapprox::faster::tanh(*ptr.offset(i))
+                *ptr.offset(i) = crate::activations::tanh(*ptr.offset(i))
             }
         }
     }

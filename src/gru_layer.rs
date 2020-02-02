@@ -5,6 +5,7 @@ use ndarray::linalg::general_mat_mul;
 use crate::matrix_load::*;
 use libc::c_void;
 use std::marker::PhantomData;
+use crate::activations;
 
 pub type SgemmJitKernelT =
     Option<unsafe extern "C" fn(arg1: *mut c_void, arg2: *mut f32, arg3: *mut f32, arg4: *mut f32)>;
@@ -97,7 +98,7 @@ impl<GS: GRUSizer> GRULayer<GS> {
                     let sptr = sample.as_ptr();
                     let bptr = self.biur.as_ptr();
 		    for i in 0..2*GS::output_features() as isize {
-                        *ptr.offset(i) = 1.0 / (1.0 + fastapprox::faster::exp(*ptr.offset(i) + *sptr.offset(i) + *bptr.offset(i)));
+                        *ptr.offset(i) = crate::activations::sigmoid(-(*ptr.offset(i) + *sptr.offset(i) + *bptr.offset(i)));
                     }
                 }
             }
@@ -124,7 +125,7 @@ impl<GS: GRUSizer> GRULayer<GS> {
 
 		for i in 0..GS::output_features() as isize {
                     *stptr.offset(i) = *old_st_ptr.offset(i) * *ptr.offset(i)
-                            + (1.0 - *ptr.offset(i)) * fastapprox::faster::tanh(*nvptr.offset(i));
+                            + (1.0 - *ptr.offset(i)) * crate::activations::tanh(*nvptr.offset(i));
                 }
             }
         }

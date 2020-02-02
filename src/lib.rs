@@ -8,6 +8,7 @@ extern crate libc;
 mod matrix_load;
 mod conv_layer;
 mod gru_layer;
+mod activations;
 
 use matrix_load::*;
 use conv_layer::*;
