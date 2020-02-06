@@ -99,7 +99,7 @@ around 1.5 M signals/s).
 
 Speed is given in signals/sec.
 
-| Network type        | Laptop 1 core | Laptop 4 cores | Xeon 1 core | Xeon 4 cores | Klebs Mapped % | Klebsiela 10% acc | Klebsiela median acc | Klebsiela 90% acc | Human mapped % | Human 10% acc | Human median acc | Human 90% acc |
+| Network type        | Laptop 1 core | Laptop 4 cores | Xeon 1 core | Xeon 4 cores | Klebs Mapped % | Klebsiela 10% acc | Klebs median acc | Klebs 90% acc | Human mapped % | Human 10% acc | Human median acc | Human 90% acc |
 |---------------------|---------------|----------------|-------------|--------------|----------------|-------------------|----------------------|-------------------|----------------|---------------|------------------|---------------|
 | w48, beam1          | 1.4M          | 4.4M           | 1.0M        | 4.1M         | 98.6           | 73.0              | 84.0                 | 88.8              | 84.3           | 0.0           | 80.6             | 86.8          |
 | w48, beam5 | 1.3M          | 3.8M           | 920.6K      | 3.8M         | 98.8           | 75.2              | 85.1                 | 89.5              | 84.9           | 0.0           | 81.6             | 87.7          |
