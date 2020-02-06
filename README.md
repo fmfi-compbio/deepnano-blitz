@@ -50,6 +50,42 @@ GPU caller:
 If you have new GPU (like RTX series) this might be faster:
 `deepnano2_caller_gpu.py --output out.fasta --directory reads_directory/ --half --batch-size 2048`
 
+## Calling programmatically
+
+```python
+import deepnano2
+import os
+import numpy as np
+
+def med_mad(x, factor=1.4826):
+    """
+    Calculate signal median and median absolute deviation
+    """
+    med = np.median(x)
+    mad = np.median(np.absolute(x - med)) * factor
+    return med, mad
+
+def rescale_signal(signal):
+    signal = signal.astype(np.float32)
+    med, mad = med_mad(signal)
+    signal -= med
+    signal /= mad
+    return signal
+
+network_type = "48"
+beam_size = 5
+beam_cut_threshold = 0.01
+weights = os.path.join(deepnano2.__path__[0], "weights", "rnn%s.txt" % network_type)
+caller = deepnano2.Caller(network_type, weights, beam_size, beam_cut_threshold)
+
+# Minimal size for calling is STEP*3 + PAD*6 + 1 (STEP and PAD are defined in src/lib.rs)
+signal = np.random.normal(size=(1000*3+10*6+1))
+
+signal = rescale_signal(signal)
+
+print(caller.call_raw_signal(signal))
+```
+
 ## Benchmarks
 
 Run on subset of reads from [Klebsiela
