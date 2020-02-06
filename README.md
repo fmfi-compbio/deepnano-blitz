@@ -29,10 +29,20 @@ If you find this work useful, please cite (there will be preprint about his upda
 
 ## Running
 
-`deepnano2_caller.py --output out.fasta --directory reads_directory/`
+Try one off (ordered by increasing accuracy and decresing speed):
+
+* `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 48 --beam-size 1`
+* `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 48`
+* `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 56`
+* `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 64`
+* `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 80`
+* `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 96`
+
+
+
 
 For more accurate (but much slower) basecalling run:
-`deepnano2_caller.py --output out.fasta --directory reads_directory/ --threads 16 --network-type accurate`
+`deepnano2_caller.py --output out.fasta --directory reads_directory/ --threads 16 --network-type 256`
 
 GPU caller:
 `deepnano2_caller_gpu.py --output out.fasta --directory reads_directory/`
@@ -42,42 +52,29 @@ If you have new GPU (like RTX series) this might be faster:
 
 ## Benchmarks
 
-Run on subset of 476 reads from [Klebsiela dataset](https://github.com/rrwick/Basecalling-comparison/tree/95bf07476f61cda79e6971f20f48c6ac83e634b3).
-MinION produces this amount in apx. 52 seconds assuming maximum throughput of 2M signals/s (which in reality never
-happens, so realistic number is around 70 seconds).
+Run on subset of reads from [Klebsiela
+dataset](https://github.com/rrwick/Basecalling-comparison/tree/95bf07476f61cda79e6971f20f48c6ac83e634b3)
+and also on human dataset.
+
+MinION theoretical maximum is 2M signals/s (which in reality never happens, so realistic number is
+around 1.5 M signals/s).
 
 ### Basecallers in fast mode
 
-56, 64, 96 widths are still being trained
-
-| Basecaller                                       | Time to basecall | Signals/s | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
-|--------------------------------------------------|             ----:|----------:|                --------:|            ----:|                 -------:|
-| Guppy 3.3.0 fast, 1 thread XEON E5-2695 v4       | 26m 0s           |    67,6k  | 81.3%                   | 88.4%           | 92.4%                   |
-| Guppy 3.3.0 fast, 4 threads XEON E5-2695 v4      | 6m 54s           |    254k   | 81.3%                   | 88.4%           | 92.4%                   |
-| DN-blitz, 1 thread XEON E5-2695 v4               | 2m 3s            |    857k   | 75.6%                   | 84.1%           | 88.8%                   |
-| DN-blitz, 4 threads XEON E5-2695 v4              | 32s              |    3.30M  | 75.6%                   | 84.1%           | 88.8%                   |
-| DN-blitz, 1 thread XEON E5-2695 v4, beam         | 2m 12s           |    799k   | 77.6%                   | 85.1%           | 89.4%                   |
-| DN-blitz, 4 threads XEON E5-2695 v4, beam        | 34s              |    3.10M  | 77.6%                   | 85.1%           | 89.4%                   |
-| DN-blitz, 56 width, 1 thread, XEON               | 2m 56s           |           |                         |                 |                         |
-| DN-blitz, 56 width, 4 thread, XEON               | 47s              |           |                         |                 |                         |
-| DN-blitz, 64 width, 1 thread, XEON               | 4m 21s           |           |                         |                 |                         |
-| DN-blitz, 96 width, 1 thread, XEON               | 8m 37s           |           | 79.5%                   | 87.5%           | 91.9%                   |
-| DN-blitz, 96 width, 1 thread, XEON, beam         | 8m 37s           |           | 81.4%                   | 88.4%           | 92.3%                   |
-|------------------------------------------        |             -----|-----------|                ---------|            -----|                 --------|
-| DN-blitz, 1 thread i7-7700HQ (laptop)            | 1m 24s           |    1.25M  | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 4 threads i7-7700HQ (laptop)           | 28s              |    3.77M  | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 1 thread i7-7700HQ (laptop), beam      | 1m 33s           |    1.13M  | 77.5%                   | 85.1%           | 89.3%                   |
-| DN-blitz, 4 threads i7-7700HQ (laptop), beam     | 29s              |    3.64M  | 77.5%                   | 85.1%           | 89.3%                   |
-| DN-blitz, 56 width, 1 thread, laptop             |                  |           |                         |                 |                         |
-| DN-blitz, 56 width, 4 thread, laptop             |                  |           |                         |                 |                         |
-| DN-blitz, 64 width, 1 thread, laptop             | 2m 50s           |           |                         |                 |                         |
-| DN-blitz, 64 width, 1 thread, laptop             | 53s              |           |                         |                 |                         |
-| DN-blitz, 96 width, 1 thread, laptop             | 5m 54s           |           |                         |                 |                         |
-| DN-blitz, 96 width, 4 thread, laptop             | 1m 59s           |           |                         |                 |                         |
+| Network type        | Laptop 1 core | Laptop 4 cores | Xeon 1 core | Xeon 4 cores | Klebs Mapped % | Klebsiela 10% acc | Klebsiela median acc | Klebsiela 90% acc | Human mapped % | Human 10% acc | Human median acc | Human 90% acc |
+|---------------------|---------------|----------------|-------------|--------------|----------------|-------------------|----------------------|-------------------|----------------|---------------|------------------|---------------|
+| w48, beam1          | 1.4M          | 4.4M           | 1.0M        | 4.1M         | 98.6           | 73.0              | 84.0                 | 88.8              | 84.3           | 0.0           | 80.6             | 86.8          |
+| w48, beam5, cut 0.1 | 1.3M          | 3.8M           | 920.6K      | 3.8M         | 98.8           | 75.2              | 85.1                 | 89.5              | 84.9           | 0.0           | 81.6             | 87.7          |
+| w56, beam5, cut 0.1 | 941.8K        | 2.8M           | 649.7K      | 2.6M         | 98.9           | 76.1              | 85.9                 | 90.2              | 86.1           | 0.0           | 82.3             | 88.5          |
+| w64, beam5, cut 0.1 | 728.8K        | 2.1M           | 486.3K      | 2.1M         | 99.0           | 77.2              | 86.6                 | 90.8              | 85.5           | 0.0           | 83.4             | 89.3          |
+| w80, beam5, cut 0.1 | 477.6K        | 1.5M           | 351.5K      | 1.4M         | 99.0           | 77.3              | 87.3                 | 91.6              | 86.1           | 0.0           | 84.3             | 89.8          |
+| w96, beam5, cut 0.1 | 324.1K        | 1.0M           | 249.1K      | 1.0M         | 99.3           | 79.0              | 88.4                 | 92.4              | 87.4           | 0.0           | 85.9             | 91.0          |
+| guppy 3.4.4         | 87.9K         | 328.6K         | 66.4K       | 264.4K       | 99.5           | 79.6              | 88.4                 | 92.5              | 89.1           | 0.0           | 85.1             | 91.0          |
+| guppy 3.4.4 hac     | 9.5K          | 35.1K          | 7.2K        | 29.1K        | 99.5           | 81.6              | 90.6                 | 94.5              | 89.6           | 0.0           | 87.4             | 93.3          |
 
 ### Basecallers in high-accuracy mode
 
-Note, that we are using 16 threads.
+Note, that we are using 16 threads. Results on klebsiella dataset.
 
 | Basecaller                                       | Time to basecall | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
 |--------------------------------------------------|             ----:|                --------:|            ----:|                 -------:|
@@ -93,15 +90,3 @@ Note, that we are using 16 threads.
 
 TODO: beam search for GPU version and RTX results
 
-### Accuracy on Human data
-
-(TODO exact source)
-
-| Basecaller                                       | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
-|--------------------------------------------------|                --------:|            ----:|                 -------:|
-| Guppy 3.3.0 hac,                                 | 57.7%                   | 88.2%           | 93.4%                   |
-| Guppy 3.3.0 fast                                 | 58.9%                   | 85.7%           | 91.0%                   |
-| DN-blitz                                         | 57.3%                   | 81.1%           | 86.8%                   |
-| DN-blitz, beam                                   | 55.2%                   | 81.6%           | 87.5%                   |
-| DN-blitz big                                     | 56.5%                   | 86.7%           | 91.9%                   |
-| DN-blitz big, beam                               | 59.2%                   | 87.6%           | 92.4%                   |
