@@ -2,10 +2,6 @@
 
 This is a very fast basecaseller which can basecall reads as fast as they come
 from MinION on ordinary laptop.
-There is also GPU version of basecaller, which (soon) will be as good as Guppy
-and **does not** require compute capability 6.2 (anything which can run Pytorch 1.0 is good enough).
-
-Also contains bigger network, which has performance similar to Guppy.
 
 If you find this work useful, please cite (there will be preprint about his updates coming soon):
 
@@ -20,7 +16,7 @@ If you find this work useful, please cite (there will be preprint about his upda
 
 ## Instalation
 
-* [optional] If you want to use GPU, we recommend setting up Conda environment with pytorch first.
+* [optional] If you want to use GPU version (see below), we recommend setting up Conda environment with pytorch first.
 * Install Rust (programming language, not game and besides you should already have it ;) )
 * Ask for nightly version `rustup default nightly-2019-12-11`
 * Clone this repository
@@ -48,11 +44,6 @@ Try one off (ordered by increasing accuracy and decresing speed):
 For more accurate (but much slower) basecalling run:
 `deepnano2_caller.py --output out.fasta --directory reads_directory/ --threads 16 --network-type 256`
 
-GPU caller:
-`deepnano2_caller_gpu.py --output out.fasta --directory reads_directory/`
-
-If you have new GPU (like RTX series) this might be faster:
-`deepnano2_caller_gpu.py --output out.fasta --directory reads_directory/ --half --batch-size 2048`
 
 ## Calling programmatically
 
@@ -113,6 +104,17 @@ Speed is given in signals/sec.
 | w96, beam5 | 324.1K        | 1.0M           | 249.1K      | 1.0M         | 99.3           | 79.0              | 88.4                 | 92.4              | 87.4           | 85.9             | 91.0          |
 | guppy 3.4.4 fast    | 87.9K         | 328.6K         | 66.4K       | 264.4K       | 99.5           | 79.6              | 88.4                 | 92.5              | 89.1           | 85.1             | 91.0          |
 | guppy 3.4.4 hac     | 9.5K          | 35.1K          | 7.2K        | 29.1K        | 99.5           | 81.6              | 90.6                 | 94.5              | 89.6           | 87.4             | 93.3          |
+
+## GPU version
+
+There is also GPU version of basecaller, which is slightly worse and slower than guppy,
+but **does not** require compute capability 6.2 (anything which can run Pytorch 1.0 is good enough).
+
+It can be run like this:
+`deepnano2_caller_gpu.py --output out.fasta --directory reads_directory/`
+
+If you have new GPU (like RTX series) this might be faster:
+`deepnano2_caller_gpu.py --output out.fasta --directory reads_directory/ --half --batch-size 2048`
 
 ### Basecallers in high-accuracy mode
 
