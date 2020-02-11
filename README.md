@@ -27,6 +27,10 @@ If you find this work useful, please cite (there will be preprint about his upda
 * Run `python setup.py install`
 * Change Rust version to whatever you like
 
+### Installing on Mac/Windows (not tested)
+
+We heavily rely on MKL libraries (downloaded from here https://anaconda.org/intel/mkl-static/files via https://github.com/fmfi-compbio/deepnano-blitz/blob/master/build.rs#L17). Changing download URL (and maybe some filenames) should work. If yes, please send us pointer to tested configuration (we will then add platform detection and relevant code branches to master).
+
 ## Running
 
 Try one off (ordered by increasing accuracy and decresing speed):
