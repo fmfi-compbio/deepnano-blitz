@@ -24,7 +24,7 @@ If you find this work useful, please cite (there will be preprint about his upda
 * Install Rust (programming language, not game and besides you should already have it ;) )
 * Ask for nightly version `rustup default nightly-2019-12-11`
 * Clone this repository
-* Run `python setup.py`
+* Run `python setup.py install`
 * Change Rust version to whatever you like
 
 ## Running
