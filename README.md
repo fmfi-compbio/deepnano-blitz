@@ -9,7 +9,7 @@ If you find this work useful, please cite (there will be preprint about his upda
 
 ## Limitations
 
-* Works only on 64bit linux.
+* Tested only on 64bit linux (external parties made it work on MacOS, see below).
 * Only R9.4.1 for now.
 * On AMD CPUs it is advised to use: `export MKL_DEBUG_CPU_TYPE=5`
 * You need python3 (tested with python 3.6)
