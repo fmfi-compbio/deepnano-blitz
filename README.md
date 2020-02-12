@@ -5,7 +5,7 @@ from MinION on ordinary laptop.
 
 If you find this work useful, please cite (there will be preprint about his updates coming soon):
 
-[Boža, Vladimír, Broňa Brejová, and Tomáš Vinař. "DeepNano: deep recurrent neural networks for base calling in MinION nanopore reads." PloS one 12.6 (2017).](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0178751)
+[Vladimir Boza, Peter Peresini,  Brona Brejova,  Tomas Vinar. "DeepNano-blitz: A Fast Base Caller for MinION Nanopore Sequencers." bioRxiv 2020.02.11.944223; doi: https://doi.org/10.1101/2020.02.11.944223](https://www.biorxiv.org/content/10.1101/2020.02.11.944223v1)
 
 ## Limitations
 
