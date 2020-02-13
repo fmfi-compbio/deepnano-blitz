@@ -2,82 +2,124 @@
 
 This is a very fast basecaseller which can basecall reads as fast as they come
 from MinION on ordinary laptop.
-There is also GPU version of basecaller, which (soon) will be as good as Guppy
-and **does not** require compute capability 6.2 (anything which can run Pytorch 1.0 is good enough).
-
-Also contains bigger network, which has performance similar to Guppy.
 
 If you find this work useful, please cite (there will be preprint about his updates coming soon):
 
-[Boža, Vladimír, Broňa Brejová, and Tomáš Vinař. "DeepNano: deep recurrent neural networks for base calling in MinION nanopore reads." PloS one 12.6 (2017).](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0178751)
+[Vladimir Boza, Peter Peresini,  Brona Brejova,  Tomas Vinar. "DeepNano-blitz: A Fast Base Caller for MinION Nanopore Sequencers." bioRxiv 2020.02.11.944223; doi: https://doi.org/10.1101/2020.02.11.944223](https://www.biorxiv.org/content/10.1101/2020.02.11.944223v1)
 
 ## Limitations
 
-* Works only on 64bit linux.
+* Tested only on 64bit linux (external parties made it work on MacOS, see below).
 * Only R9.4.1 for now.
 * On AMD CPUs it is advised to use: `export MKL_DEBUG_CPU_TYPE=5`
 * You need python3 (tested with python 3.6)
+* In some situations you might need to do `export OMP_NUM_THREADS=1`
 
 ## Instalation
 
-* [optional] If you want to use GPU, we recommend setting up Conda environment with pytorch first.
+* [optional] If you want to use GPU version (see below), we recommend setting up Conda environment with pytorch first.
 * Install Rust (programming language, not game and besides you should already have it ;) )
 * Ask for nightly version `rustup default nightly-2019-12-11`
 * Clone this repository
-* Run `python setup.py`
+* Run `python setup.py install`
 * Change Rust version to whatever you like
+
+### Installing on Mac/Windows (not tested)
+
+We heavily rely on MKL libraries (downloaded from here https://anaconda.org/intel/mkl-static/files via https://github.com/fmfi-compbio/deepnano-blitz/blob/master/build.rs#L17). Changing download URL (and maybe some filenames) should work. If yes, please send us pointer to tested configuration (we will then add platform detection and relevant code branches to master).
 
 ## Running
 
-`deepnano2_caller.py --output out.fasta --directory reads_directory/`
+Try one off (ordered by increasing accuracy and decresing speed):
+
+* `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 48 --beam-size 1`
+* `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 48`
+* `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 56`
+* `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 64`
+* `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 80`
+* `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 96`
+
+
+
 
 For more accurate (but much slower) basecalling run:
-`deepnano2_caller.py --output out.fasta --directory reads_directory/ --threads 16 --network-type accurate`
+`deepnano2_caller.py --output out.fasta --directory reads_directory/ --threads 16 --network-type 256`
 
-GPU caller:
+
+## Calling programmatically
+
+```python
+import deepnano2
+import os
+import numpy as np
+
+def med_mad(x, factor=1.4826):
+    """
+    Calculate signal median and median absolute deviation
+    """
+    med = np.median(x)
+    mad = np.median(np.absolute(x - med)) * factor
+    return med, mad
+
+def rescale_signal(signal):
+    signal = signal.astype(np.float32)
+    med, mad = med_mad(signal)
+    signal -= med
+    signal /= mad
+    return signal
+
+network_type = "48"
+beam_size = 5
+beam_cut_threshold = 0.01
+weights = os.path.join(deepnano2.__path__[0], "weights", "rnn%s.txt" % network_type)
+caller = deepnano2.Caller(network_type, weights, beam_size, beam_cut_threshold)
+
+# Minimal size for calling is STEP*3 + PAD*6 + 1 (STEP and PAD are defined in src/lib.rs)
+signal = np.random.normal(size=(1000*3+10*6+1))
+
+signal = rescale_signal(signal)
+
+print(caller.call_raw_signal(signal))
+```
+
+## Benchmarks
+
+Run on subset of reads from [Klebsiela
+dataset](https://github.com/rrwick/Basecalling-comparison/tree/95bf07476f61cda79e6971f20f48c6ac83e634b3)
+and also on human dataset.
+
+MinION theoretical maximum is 2M signals/s (which in reality never happens, so realistic number is
+around 1.5 M signals/s).
+
+### Basecallers in fast mode
+
+Speed is given in signals/sec.
+
+| Network type        | Laptop 1 core | Laptop 4 cores | Xeon 1 core | Xeon 4 cores | Klebs Mapped % | Klebsiela 10% acc | Klebs median acc | Klebs 90% acc | Human mapped % | Human median acc | Human 90% acc |
+|---------------------|---------------|----------------|-------------|--------------|----------------|-------------------|----------------------|-------------------|---------------|------------------|---------------|
+| w48, beam1          | 1.4M          | 4.4M           | 1.0M        | 4.1M         | 98.6           | 73.0              | 84.0                 | 88.8              | 84.3           | 80.6             | 86.8          |
+| w48, beam5 | 1.3M          | 3.8M           | 920.6K      | 3.8M         | 98.8           | 75.2              | 85.1                 | 89.5              | 84.9           | 81.6             | 87.7          |
+| w56, beam5 | 941.8K        | 2.8M           | 649.7K      | 2.6M         | 98.9           | 76.1              | 85.9                 | 90.2              | 86.1           | 82.3             | 88.5          |
+| w64, beam5 | 728.8K        | 2.1M           | 486.3K      | 2.1M         | 99.0           | 77.2              | 86.6                 | 90.8              | 85.5           | 83.4             | 89.3          |
+| w80, beam5 | 477.6K        | 1.5M           | 351.5K      | 1.4M         | 99.0           | 77.3              | 87.3                 | 91.6              | 86.1           | 84.3             | 89.8          |
+| w96, beam5 | 324.1K        | 1.0M           | 249.1K      | 1.0M         | 99.3           | 79.0              | 88.4                 | 92.4              | 87.4           | 85.9             | 91.0          |
+| guppy 3.4.4 fast    | 87.9K         | 328.6K         | 66.4K       | 264.4K       | 99.5           | 79.6              | 88.4                 | 92.5              | 89.1           | 85.1             | 91.0          |
+| guppy 3.4.4 hac     | 9.5K          | 35.1K          | 7.2K        | 29.1K        | 99.5           | 81.6              | 90.6                 | 94.5              | 89.6           | 87.4             | 93.3          |
+
+## GPU version
+
+There is also GPU version of basecaller, which is slightly worse and slower than guppy,
+but **does not** require compute capability 6.2 (anything which can run Pytorch 1.0 is good enough).
+
+It can be run like this:
 `deepnano2_caller_gpu.py --output out.fasta --directory reads_directory/`
 
 If you have new GPU (like RTX series) this might be faster:
 `deepnano2_caller_gpu.py --output out.fasta --directory reads_directory/ --half --batch-size 2048`
 
-## Benchmarks
-
-Run on subset of 476 reads from [Klebsiela dataset](https://github.com/rrwick/Basecalling-comparison/tree/95bf07476f61cda79e6971f20f48c6ac83e634b3).
-MinION produces this amount in apx. 52 seconds assuming maximum throughput of 2M signals/s (which in reality never
-happens, so realistic number is around 70 seconds).
-
-### Basecallers in fast mode
-
-56, 64, 96 widths are still being trained
-
-| Basecaller                                       | Time to basecall | Signals/s | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
-|--------------------------------------------------|             ----:|----------:|                --------:|            ----:|                 -------:|
-| Guppy 3.3.0 fast, 1 thread XEON E5-2695 v4       | 26m 0s           |    67,6k  | 81.3%                   | 88.4%           | 92.4%                   |
-| Guppy 3.3.0 fast, 4 threads XEON E5-2695 v4      | 6m 54s           |    254k   | 81.3%                   | 88.4%           | 92.4%                   |
-| DN-blitz, 1 thread XEON E5-2695 v4               | 2m 3s            |    857k   | 75.6%                   | 84.1%           | 88.8%                   |
-| DN-blitz, 4 threads XEON E5-2695 v4              | 32s              |    3.30M  | 75.6%                   | 84.1%           | 88.8%                   |
-| DN-blitz, 1 thread XEON E5-2695 v4, beam         | 2m 12s           |    799k   | 77.6%                   | 85.1%           | 89.4%                   |
-| DN-blitz, 4 threads XEON E5-2695 v4, beam        | 34s              |    3.10M  | 77.6%                   | 85.1%           | 89.4%                   |
-| DN-blitz, 56 width, 1 thread, XEON               | 2m 56s           |           |                         |                 |                         |
-| DN-blitz, 56 width, 4 thread, XEON               | 47s              |           |                         |                 |                         |
-| DN-blitz, 64 width, 1 thread, XEON               | 4m 21s           |           |                         |                 |                         |
-| DN-blitz, 96 width, 1 thread, XEON               | 8m 37s           |           | 79.5%                   | 87.5%           | 91.9%                   |
-| DN-blitz, 96 width, 1 thread, XEON, beam         | 8m 37s           |           | 81.4%                   | 88.4%           | 92.3%                   |
-|------------------------------------------        |             -----|-----------|                ---------|            -----|                 --------|
-| DN-blitz, 1 thread i7-7700HQ (laptop)            | 1m 24s           |    1.25M  | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 4 threads i7-7700HQ (laptop)           | 28s              |    3.77M  | 75.5%                   | 84.0%           | 88.7%                   |
-| DN-blitz, 1 thread i7-7700HQ (laptop), beam      | 1m 33s           |    1.13M  | 77.5%                   | 85.1%           | 89.3%                   |
-| DN-blitz, 4 threads i7-7700HQ (laptop), beam     | 29s              |    3.64M  | 77.5%                   | 85.1%           | 89.3%                   |
-| DN-blitz, 56 width, 1 thread, laptop             |                  |           |                         |                 |                         |
-| DN-blitz, 56 width, 4 thread, laptop             |                  |           |                         |                 |                         |
-| DN-blitz, 64 width, 1 thread, laptop             | 2m 50s           |           |                         |                 |                         |
-| DN-blitz, 64 width, 1 thread, laptop             | 53s              |           |                         |                 |                         |
-| DN-blitz, 96 width, 1 thread, laptop             | 5m 54s           |           |                         |                 |                         |
-| DN-blitz, 96 width, 4 thread, laptop             | 1m 59s           |           |                         |                 |                         |
-
 ### Basecallers in high-accuracy mode
 
-Note, that we are using 16 threads.
+Note, that we are using 16 threads. Results on klebsiella dataset.
 
 | Basecaller                                       | Time to basecall | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
 |--------------------------------------------------|             ----:|                --------:|            ----:|                 -------:|
@@ -93,15 +135,3 @@ Note, that we are using 16 threads.
 
 TODO: beam search for GPU version and RTX results
 
-### Accuracy on Human data
-
-(TODO exact source)
-
-| Basecaller                                       | 10%-percentile accuracy | Median accuracy | 90%-percentile accuracy |
-|--------------------------------------------------|                --------:|            ----:|                 -------:|
-| Guppy 3.3.0 hac,                                 | 57.7%                   | 88.2%           | 93.4%                   |
-| Guppy 3.3.0 fast                                 | 58.9%                   | 85.7%           | 91.0%                   |
-| DN-blitz                                         | 57.3%                   | 81.1%           | 86.8%                   |
-| DN-blitz, beam                                   | 55.2%                   | 81.6%           | 87.5%                   |
-| DN-blitz big                                     | 56.5%                   | 86.7%           | 91.9%                   |
-| DN-blitz big, beam                               | 59.2%                   | 87.6%           | 92.4%                   |
