@@ -3,6 +3,7 @@ use std::error::Error;
 use std::io::BufRead;
 use ndarray::linalg::general_mat_mul;
 use crate::matrix_load::*;
+use crate::approx::*;
 use libc::c_void;
 use std::marker::PhantomData;
 
@@ -97,7 +98,7 @@ impl<GS: GRUSizer> GRULayer<GS> {
                     let sptr = sample.as_ptr();
                     let bptr = self.biur.as_ptr();
 		    for i in 0..2*GS::output_features() as isize {
-                        *ptr.offset(i) = 1.0 / (1.0 + fastapprox::faster::exp(*ptr.offset(i) + *sptr.offset(i) + *bptr.offset(i)));
+                        *ptr.offset(i) = approx_nsigmoid(*ptr.offset(i) + *sptr.offset(i) + *bptr.offset(i));
                     }
                 }
             }
@@ -124,7 +125,7 @@ impl<GS: GRUSizer> GRULayer<GS> {
 
 		for i in 0..GS::output_features() as isize {
                     *stptr.offset(i) = *old_st_ptr.offset(i) * *ptr.offset(i)
-                            + (1.0 - *ptr.offset(i)) * fastapprox::faster::tanh(*nvptr.offset(i));
+                            + (1.0 - *ptr.offset(i)) * approx_tanh(*nvptr.offset(i));
                 }
             }
         }

@@ -1,6 +1,7 @@
 use ndarray::linalg::general_mat_mul;
 use ndarray::{Array, Ix1, Ix2};
 use crate::matrix_load::*;
+use crate::approx::*;
 use std::io::BufRead;
 use std::error::Error;
 use std::marker::PhantomData;
@@ -82,7 +83,7 @@ impl<CS: ConvSizer> ConvLayer<CS> {
         unsafe {
             let ptr = self.pooled_out.as_mut_ptr();
             for i in 0..self.pooled_out.len() as isize {
-                *ptr.offset(i) = fastapprox::faster::tanh(*ptr.offset(i))
+                *ptr.offset(i) = approx_tanh(*ptr.offset(i))
             }
         }
     }
