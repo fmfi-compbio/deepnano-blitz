@@ -83,7 +83,7 @@ print(caller.call_raw_signal(signal))
 ```
 
 When using only very short first part of read (and especially when you lowered the STEP), you might
-need to cutoff bad part of the read using this (trim function is adopted from nanonet):
+need to cutoff bad part of the read (usually called the stall) using this (trim function is adopted from nanonet):
 
 ```python
 def trim(signal, window_size=40, threshold_factor=3.0, min_elements=3):
@@ -102,13 +102,29 @@ def trim(signal, window_size=40, threshold_factor=3.0, min_elements=3):
         if len(window[window > threshold]) > min_elements:
             if window[-1] > threshold:
                 continue
-            return end, len(signal)
+            return end
 
-    return 0, len(signal)
+    return 0
 
 # Call this before normalization
-start, end = trim(signal)
-signal = signal[start:end]
+start = trim(signal)
+signal = signal[start:]
+```
+
+Or alternativelly you can use this triming function (courtesy of https://github.com/Gogis0):
+
+```python
+def trim_blank(sig, window=300):
+    N = len(sig)
+    variances = [np.var(sig[i:i+window]) for i in range(N//2, N-window, window)]
+    mean_var = np.mean(variances)
+    trim_idx = 20
+    while window > 5:
+        while np.var(sig[trim_idx: trim_idx + window]) < 0.3*mean_var:
+            trim_idx += 1
+        window //= 2
+
+    return trim_idx
 ```
 
 
