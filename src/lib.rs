@@ -45,7 +45,7 @@ extern "C" {
 }
 
 
-const STEP: usize = 1000;
+const STEP: usize = 500;
 const PAD: usize = 10;
 
 struct OutLayer {

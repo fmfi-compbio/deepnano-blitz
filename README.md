@@ -82,6 +82,36 @@ signal = rescale_signal(signal)
 print(caller.call_raw_signal(signal))
 ```
 
+When using only very short first part of read (and especially when you lowered the STEP), you might
+need to cutoff bad part of the read using this (trim function is adopted from nanonet):
+
+```python
+def trim(signal, window_size=40, threshold_factor=3.0, min_elements=3):
+
+    med, mad = med_mad(signal[-(window_size*25):])
+    threshold = med + mad * threshold_factor
+    num_windows = len(signal) // window_size
+
+    for pos in range(num_windows):
+
+        start = pos * window_size
+        end = start + window_size
+
+        window = signal[start:end]
+
+        if len(window[window > threshold]) > min_elements:
+            if window[-1] > threshold:
+                continue
+            return end, len(signal)
+
+    return 0, len(signal)
+
+# Call this before normalization
+start, end = trim(signal)
+signal = signal[start:end]
+```
+
+
 ## Benchmarks
 
 Run on subset of reads from [Klebsiela
