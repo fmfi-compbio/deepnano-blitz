@@ -12,16 +12,24 @@ If you find this work useful, please cite (there will be preprint about his upda
 * Tested only on 64bit linux (external parties made it work on MacOS, see below).
 * Only R9.4.1 for now.
 * On AMD CPUs it is advised to use: `export MKL_DEBUG_CPU_TYPE=5`
-* You need python3 (tested with python 3.6)
+* You need python3 (tested with python 3.6). PyO3 package needs at least python3.5.
 * In some situations you might need to do `export OMP_NUM_THREADS=1`
 
 ## Instalation
 
-* Install Rust (programming language, not game and besides you should already have it ;) )
+* Install Rust (programming language, not game and besides you should already have it ;) ). You can view instuctions here: https://www.rust-lang.org/tools/install and just run `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 * Ask for nightly version `rustup default nightly-2019-12-11`
-* Clone this repository
+* Prepare your conda environment (`conda create python=3.6 --name deepnanoblitz`). You do not have to do this, if you manage your Python packages in different way. And activate it (`conda activate deepnanoblitz`).
+* Clone this repository (`git clone https://github.com/fmfi-compbio/deepnano-blitz.git`)
+* Go inside the package (`cd deepnano-bliz`)
 * Run `python setup.py install`
-* Change Rust version to whatever you like
+* Change Rust version to whatever you like (not needed)
+
+## Instalation via binary wheel
+
+* Prepare your environment (conda, virtualenv, ...) with python3.6.
+* On Linux machine with python3.6 (and CPU with AVX2 instructions) you can use: `pip install dist/deepnano2-0.1-cp36-cp36m-linux_x86_64.whl`
+
 
 ### Installing on Mac/Windows (not tested)
 
