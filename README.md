@@ -17,7 +17,6 @@ If you find this work useful, please cite (there will be preprint about his upda
 
 ## Instalation
 
-* [optional] If you want to use GPU version (see below), we recommend setting up Conda environment with pytorch first.
 * Install Rust (programming language, not game and besides you should already have it ;) )
 * Ask for nightly version `rustup default nightly-2019-12-11`
 * Clone this repository
@@ -152,10 +151,13 @@ Speed is given in signals/sec.
 | guppy 3.4.4 fast    | 87.9K         | 328.6K         | 66.4K       | 264.4K       | 99.5           | 79.6              | 88.4                 | 92.5              | 89.1           | 85.1             | 91.0          |
 | guppy 3.4.4 hac     | 9.5K          | 35.1K          | 7.2K        | 29.1K        | 99.5           | 81.6              | 90.6                 | 94.5              | 89.6           | 87.4             | 93.3          |
 
-## GPU version
+## GPU version (experimental, not advised to use)
 
 There is also GPU version of basecaller, which is slightly worse and slower than guppy,
 but **does not** require compute capability 6.2 (anything which can run Pytorch 1.0 is good enough).
+
+If you want to use GPU version, we recommend setting up Conda environment with pytorch first.
+
 
 It can be run like this:
 `deepnano2_caller_gpu.py --output out.fasta --directory reads_directory/`

@@ -7,6 +7,8 @@ import numpy as np
 import datetime
 import deepnano2
 from multiprocessing import Pool
+import sys
+import gzip
 
 def med_mad(x, factor=1.4826):
     """
@@ -37,19 +39,32 @@ def call_file(filename):
         return []
     return out
 
+def write_output(read_id, basecall, output_file, format):
+    if format == "fasta":
+        print(">%s" % read_id, file=fout)
+        print(basecall, file=fout)
+    else: # fastq
+        print("@%s" % read_id, file=fout)
+        print(basecall, file=fout)
+        print("+", file=fout)
+        print("".join("A" for _ in basecall), file=fout)
+ 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Fast caller for ONT reads')
 
     parser.add_argument('--directory', type=str, nargs='*', help='One or more directories with reads')
     parser.add_argument('--reads', type=str, nargs='*', help='One or more read files')
     parser.add_argument("--output", type=str, required=True, help="Output FASTA file name")
-    parser.add_argument("--threads", type=int, default=1, help="Number of threads for basecalling")
-    parser.add_argument("--weights", type=str, default=None, help="Path to network weights")
-    parser.add_argument("--network-type", choices=["48", "56", "64", "80", "96", "256"], default="48")
+    parser.add_argument("--threads", type=int, default=1, help="Number of threads for basecalling, default 1")
+    parser.add_argument("--weights", type=str, default=None, help="Path to network weights, only used for custom weights")
+    parser.add_argument("--network-type", choices=["48", "56", "64", "80", "96", "256"], default="48", help="Size of network. Default 48")
     parser.add_argument("--beam-size", type=int, default=None,
-        help="Beam size (defaults 5 for fast and 20 for accurate). Use 1 to disable.")
+        help="Beam size (defaults 5 for 48,56,64,80,96 and 20 for 256). Use 1 for greedy decoding.")
     parser.add_argument("--beam-cut-threshold", type=float, default=None,
-        help="Threshold for creating beams (higher means faster beam search, but smaller accuracy). Values higher than 0.2 might lead to weird errors.")
+        help="Threshold for creating beams (higher means faster beam search, but smaller accuracy). Values higher than 0.2 might lead to weird errors. Default 0.1 for 48,...,96 and 0.0001 for 256")
+    parser.add_argument("--output-format", choices=["fasta", "fastq"], default="fasta")
+    parser.add_argument("--gzip-output", action="store_true", help="Compress output with gzip")
 
     args = parser.parse_args()
 
@@ -82,27 +97,28 @@ if __name__ == '__main__':
     caller = deepnano2.Caller(args.network_type, weights, beam_size, beam_cut_threshold)
 
 
-    fout = open(args.output, "w")
+    if args.gzip_output:
+        fout = gzip.open(args.output, "wt")
+    else:
+        fout = open(args.output, "w")
 
     if args.threads <= 1:
         done = 0
         for fn in files:
             start = datetime.datetime.now()
             for read_id, basecall in call_file(fn):
-                print(">%s" % read_id, file=fout)
-                print(basecall, file=fout)
+                write_output(read_id, basecall, fout, args.output_format) 
                 done += 1
-                print("done %d/%d" % (done, len(files)), read_id, datetime.datetime.now() - start)
+                print("done %d/%d" % (done, len(files)), read_id, datetime.datetime.now() - start, file=sys.stderr)
 
     else:
         pool = Pool(args.threads)
         done = 0
         for out in pool.imap_unordered(call_file, files):
             for read_id, basecall in out:
-                print(">%s" % read_id, file=fout)
-                print(basecall, file=fout)
+                write_output(read_id, basecall, fout, args.output_format)
                 done += 1
-                print("done %d/%d" % (done, len(files)), read_id)
+                print("done %d/%d" % (done, len(files)), read_id, file=sys.stderr)
     
     fout.close()
 
