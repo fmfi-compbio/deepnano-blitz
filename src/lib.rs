@@ -691,7 +691,7 @@ fn beam_search<D: Data<Elem=f32>>(result: &ArrayBase<D, Ix2>, beam_size: usize, 
                 }
                 if b == beam_prevs[beam as usize].0 {
                     new_probs.push((beam, base_prob * pr[b], 0.0));
-//                    beam_max_p[beam as usize] = beam_max_p[beam as usize].max(pr[b]);
+                    beam_max_p[beam as usize] = beam_max_p[beam as usize].max(pr[b]);
                     let mut new_beam = beam_forward[beam as usize][b-1];
                     if new_beam == -1 {
                         new_beam = beam_prevs.len() as i32;
@@ -702,7 +702,7 @@ fn beam_search<D: Data<Elem=f32>>(result: &ArrayBase<D, Ix2>, beam_size: usize, 
                     }
 
                     new_probs.push((new_beam, n_prob * pr[b], 0.0));
-//                    beam_max_p[new_beam as usize] = beam_max_p[new_beam as usize].max(pr[b]);
+                    beam_max_p[new_beam as usize] = beam_max_p[new_beam as usize].max(pr[b]);
 
                 } else {
                     let mut new_beam = beam_forward[beam as usize][b-1];
@@ -715,7 +715,7 @@ fn beam_search<D: Data<Elem=f32>>(result: &ArrayBase<D, Ix2>, beam_size: usize, 
                     }
 
                     new_probs.push((new_beam, (base_prob + n_prob) * pr[b], 0.0));
-//                    beam_max_p[new_beam as usize] = beam_max_p[new_beam as usize].max(pr[b]);
+                    beam_max_p[new_beam as usize] = beam_max_p[new_beam as usize].max(pr[b]);
                 }
             }
         }
