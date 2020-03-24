@@ -34,12 +34,15 @@ def call_file(filename):
                 signal = read.get_raw_data()
                 signal = rescale_signal(signal)
 
-                out.append((read_id, caller.call_raw_signal(signal)))
+                basecall, qual = caller.call_raw_signal(signal)
+                out.append((read_id, basecall, qual))
     except OSError:
         return []
     return out
 
-def write_output(read_id, basecall, output_file, format):
+def write_output(read_id, basecall, quals, output_file, format):
+    if len(basecall) == 0:
+        return
     if format == "fasta":
         print(">%s" % read_id, file=fout)
         print(basecall, file=fout)
@@ -47,7 +50,7 @@ def write_output(read_id, basecall, output_file, format):
         print("@%s" % read_id, file=fout)
         print(basecall, file=fout)
         print("+", file=fout)
-        print("".join("A" for _ in basecall), file=fout)
+        print(quals, file=fout)
  
 
 if __name__ == '__main__':
@@ -106,8 +109,8 @@ if __name__ == '__main__':
         done = 0
         for fn in files:
             start = datetime.datetime.now()
-            for read_id, basecall in call_file(fn):
-                write_output(read_id, basecall, fout, args.output_format) 
+            for read_id, basecall, qual in call_file(fn):
+                write_output(read_id, basecall, qual, fout, args.output_format) 
                 done += 1
                 print("done %d/%d" % (done, len(files)), read_id, datetime.datetime.now() - start, file=sys.stderr)
 
@@ -115,8 +118,8 @@ if __name__ == '__main__':
         pool = Pool(args.threads)
         done = 0
         for out in pool.imap_unordered(call_file, files):
-            for read_id, basecall in out:
-                write_output(read_id, basecall, fout, args.output_format)
+            for read_id, basecall, qual in out:
+                write_output(read_id, basecall, qual, fout, args.output_format)
                 done += 1
                 print("done %d/%d" % (done, len(files)), read_id, file=sys.stderr)
     

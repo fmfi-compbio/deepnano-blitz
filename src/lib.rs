@@ -579,7 +579,7 @@ impl Caller {
         })
     }
     
-    fn call_raw_signal(&mut self, raw_data: Vec<f32>) -> String {
+    fn call_raw_signal(&mut self, raw_data: Vec<f32>) -> (String,String) {
         let mut start_pos = 0;
 
         let mut to_stack = Vec::new();
@@ -605,7 +605,7 @@ impl Caller {
         }
 
         if to_stack.len() == 0 {
-            return String::new()
+            return (String::new(), String::new())
         }
 
         let mut result = stack(
@@ -613,7 +613,7 @@ impl Caller {
             &(to_stack.iter().map(|x| x.view()).collect::<Vec<_>>()),
         ).unwrap();
 
-        if self.beam_size > 1 {
+        /*if self.beam_size > 1*/ {
             unsafe {
                 let ptr = result.as_mut_ptr();
                 vmsExp(5 * result.shape()[0] as i32, ptr, ptr, 259);
@@ -626,9 +626,11 @@ impl Caller {
             }
 
             beam_search(&result, self.beam_size, self.beam_cut_threshold)
-        } else {
+        } /*else {
             let alphabet: Vec<char> = "NACGT".chars().collect();
 
+            let mut out = String::new();
+            let mut out_p = String::new();
             let preds = result
                 .outer_iter()
                 .map(|sample_predict| {
@@ -656,19 +658,20 @@ impl Caller {
                 .collect::<String>();
 
             preds 
-        }
+        }*/
     }
 }
 
 #[pyfunction]
 fn beam_search_py(result: &PyArray2<f32>, beam_size: usize, beam_cut_threshold: f32) -> String {
-    beam_search(&result.as_array(), beam_size, beam_cut_threshold)
+    beam_search(&result.as_array(), beam_size, beam_cut_threshold).0
 }
 
-fn beam_search<D: Data<Elem=f32>>(result: &ArrayBase<D, Ix2>, beam_size: usize, beam_cut_threshold: f32) -> String {
+fn beam_search<D: Data<Elem=f32>>(result: &ArrayBase<D, Ix2>, beam_size: usize, beam_cut_threshold: f32) -> (String,String) {
     let alphabet: Vec<char> = "NACGT".chars().collect();
     // (base, what)
     let mut beam_prevs = vec![(0, 0)];
+    let mut beam_max_p = vec![(0.0f32)];
     let mut beam_forward: Vec<[i32; 4]> = vec![[-1, -1, -1, -1]];
     let mut cur_probs = vec![(0i32, 0.0, 1.0)];
     let mut new_probs = Vec::new();
@@ -688,26 +691,31 @@ fn beam_search<D: Data<Elem=f32>>(result: &ArrayBase<D, Ix2>, beam_size: usize, 
                 }
                 if b == beam_prevs[beam as usize].0 {
                     new_probs.push((beam, base_prob * pr[b], 0.0));
+//                    beam_max_p[beam as usize] = beam_max_p[beam as usize].max(pr[b]);
                     let mut new_beam = beam_forward[beam as usize][b-1];
                     if new_beam == -1 {
                         new_beam = beam_prevs.len() as i32;
                         beam_prevs.push((b, beam));
+                        beam_max_p.push(pr[b]);
                         beam_forward[beam as usize][b-1] = new_beam;
                         beam_forward.push([-1, -1, -1, -1]);
                     }
 
                     new_probs.push((new_beam, n_prob * pr[b], 0.0));
+//                    beam_max_p[new_beam as usize] = beam_max_p[new_beam as usize].max(pr[b]);
 
                 } else {
                     let mut new_beam = beam_forward[beam as usize][b-1];
                     if new_beam == -1 {
                         new_beam = beam_prevs.len() as i32;
                         beam_prevs.push((b, beam));
+                        beam_max_p.push(pr[b]);
                         beam_forward[beam as usize][b-1] = new_beam;
                         beam_forward.push([-1, -1, -1, -1]);
                     }
 
                     new_probs.push((new_beam, (base_prob + n_prob) * pr[b], 0.0));
+//                    beam_max_p[new_beam as usize] = beam_max_p[new_beam as usize].max(pr[b]);
                 }
             }
         }
@@ -738,12 +746,19 @@ fn beam_search<D: Data<Elem=f32>>(result: &ArrayBase<D, Ix2>, beam_size: usize, 
     }
 
     let mut out = String::new();
+    let mut out_p = String::new();
     let mut beam = cur_probs[0].0;
     while beam != 0 {
         out.push(alphabet[beam_prevs[beam as usize].0]);
+        out_p.push(prob_to_str(beam_max_p[beam as usize]));
         beam = beam_prevs[beam as usize].1;
     }
-    out
+    (out, out_p)
+}
+
+fn prob_to_str(x: f32) -> char {
+    let q = (-(1.0-x).log10()*10.0) as u32 + 33;
+    std::char::from_u32(q).unwrap()
 }
 
 fn initialize_jit48() {
