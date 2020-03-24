@@ -46,10 +46,13 @@ Or ask for fastq output or compressed output:
 `deepnano2_caller.py --output out.fastq --directory reads_directory/ --output-format fastq`
 `deepnano2_caller.py --output out.fasta.gz --directory reads_directory/ --gzip-output`
 
-
 For more accurate (but much slower) basecalling run:
 `deepnano2_caller.py --output out.fasta --directory reads_directory/ --threads 16 --network-type 256`
 
+You can check the installion via:
+`deepnano2_caller.py --output testx.fastq --reads test_sample/*.fast5 --network-type 64 --beam-size 5 --threads 1 --output-format fastq`
+
+And compare it to `test_sample/expected.fastq`
 
 ## Calling programmatically
 
