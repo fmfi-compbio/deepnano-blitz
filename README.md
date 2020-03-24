@@ -38,6 +38,15 @@ Try one off (ordered by increasing accuracy and decresing speed):
 * `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 80`
 * `deepnano2_caller.py --output out.fasta --directory reads_directory/ --network-type 96`
 
+You can also increase number of threads:
+
+`deepnano2_caller.py --output out.fasta --directory reads_directory/ --threads 4`
+
+Or ask for fastq output or compressed output:
+`deepnano2_caller.py --output out.fastq --directory reads_directory/ --output-format fastq`
+`deepnano2_caller.py --output out.fasta.gz --directory reads_directory/ --gzip-output`
+
+
 
 
 
