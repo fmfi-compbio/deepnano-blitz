@@ -78,7 +78,7 @@ impl<CS: ConvSizer> ConvLayer<CS> {
             }
         }
         general_mat_mul(1.0, &self.im2col, &self.w, 0.0, &mut self.convout);
-        let mut pooled = Self::max_pool(&self.convout, &mut self.pooled_out);
+        Self::max_pool(&self.convout, &mut self.pooled_out);
         self.pooled_out += &self.b;
         unsafe {
             let ptr = self.pooled_out.as_mut_ptr();
