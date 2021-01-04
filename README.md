@@ -18,17 +18,17 @@ If you find this work useful, please cite (there will be preprint about his upda
 ## Instalation
 
 * Install Rust (programming language, not game and besides you should already have it ;) ). You can view instuctions here: https://www.rust-lang.org/tools/install and just run `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
-* Ask for nightly version `rustup default nightly-2019-12-11` (other nightly versions might also work, but this one is tested).
-* Prepare your conda environment (`conda create python=3.6 --name deepnanoblitz`). You do not have to do this, if you manage your Python packages in different way. And activate it (`conda activate deepnanoblitz`).
+* Ask for nightly version `rustup default nightly-2021-01-03` (other nightly versions might also work, but this one is tested).
+* Prepare your conda environment (`conda create python=3.9 --name deepnanoblitz`). You do not have to do this, if you manage your Python packages in different way. And activate it (`conda activate deepnanoblitz`).
 * Clone this repository (`git clone https://github.com/fmfi-compbio/deepnano-blitz.git`)
-* Go inside the package (`cd deepnano-bliz`)
+* Go inside the package (`cd deepnano-blitz`)
 * Run `python setup.py install`
 * Change Rust version to whatever you like (not needed)
 
 ## Instalation via binary wheel
 
 * Prepare your environment (conda, virtualenv, ...) with python3.6.
-* On Linux machine with python3.6 (and CPU with AVX2 instructions) you can use: `pip install dist/deepnano2-0.1-cp36-cp36m-linux_x86_64.whl`
+* Warning outdated: On Linux machine with python3.6 (and CPU with AVX2 instructions) you can use: `pip install dist/deepnano2-0.1-cp36-cp36m-linux_x86_64.whl`
 
 
 ## Installing on Mac/Windows (not tested)

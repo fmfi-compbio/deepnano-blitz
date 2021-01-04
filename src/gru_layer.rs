@@ -1,4 +1,4 @@
-use ndarray::{stack, Array, Axis, Ix1, Ix2};
+use ndarray::{concatenate, Array, Axis, Ix1, Ix2};
 use std::error::Error;
 use std::io::BufRead;
 use ndarray::linalg::general_mat_mul;
@@ -44,9 +44,9 @@ impl<GS: GRUSizer> GRULayer<GS> {
         let bor = load1dmatrix(f)?;
         let biu = load1dmatrix(f)?;
         let bou = load1dmatrix(f)?;
-        let wourn = align2d(stack!(Axis(1), -wou, -wor, woo)); //.t().to_owned();
-        let wiurn = align2d(stack!(Axis(1), -wiu, -wir, wio));
-        let biur = align1d(stack!(Axis(0), -biu - bou, -bir - bor));
+        let wourn = align2d(concatenate!(Axis(1), -wou, -wor, woo)); //.t().to_owned();
+        let wiurn = align2d(concatenate!(Axis(1), -wiu, -wir, wio));
+        let biur = align1d(concatenate!(Axis(0), -biu - bou, -bir - bor));
         let input_proc = align2d(Array::from_elem((GS::sequence_size(), GS::output_features() * 3), 0.0));
         let state = align1d(Array::from_elem(GS::output_features(), 0.0));
         let state_proc = align1d(Array::from_elem(GS::output_features() * 4, 0.0));

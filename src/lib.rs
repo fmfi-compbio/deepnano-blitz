@@ -15,7 +15,7 @@ mod models;
 
 use beam_search::*;
 use models::*;
-use ndarray::{stack, Axis};
+use ndarray::{concatenate, Axis};
 
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
@@ -29,7 +29,7 @@ extern "C" {
     fn vmsExp(n: c_int, a: *const c_float, y: *mut c_float, mode: c_longlong);
 }
 
-#[pyclass]
+#[pyclass(unsendable)]
 struct Caller {
     net: Box<dyn Net>,
     beam_size: usize,
@@ -39,7 +39,7 @@ struct Caller {
 #[pymethods]
 impl Caller {
     #[new]
-    fn new(obj: &PyRawObject, net_type: &str, path: &str, beam_size: usize, beam_cut_threshold: f32) {
+    fn new(net_type: &str, path: &str, beam_size: usize, beam_cut_threshold: f32) -> Self {
         let net: Box<dyn Net> = if net_type == "256" {
             Box::new(NetBig::new(&path).unwrap())
         } else if net_type == "56" { 
@@ -53,11 +53,9 @@ impl Caller {
         } else {
             Box::new(NetSmall::new(&path).unwrap())
         };
-        obj.init({
-            Caller {
-                net, beam_size, beam_cut_threshold
-            }
-        })
+        Caller {
+            net, beam_size, beam_cut_threshold
+        }
     }
     
     fn call_raw_signal(&mut self, raw_data: Vec<f32>) -> (String,String) {
@@ -89,7 +87,7 @@ impl Caller {
             return (String::new(), String::new())
         }
 
-        let mut result = stack(
+        let mut result = concatenate(
             Axis(0),
             &(to_stack.iter().map(|x| x.view()).collect::<Vec<_>>()),
         ).unwrap();
@@ -147,7 +145,9 @@ impl Caller {
 
 #[pyfunction]
 fn beam_search_py(result: &PyArray2<f32>, beam_size: usize, beam_cut_threshold: f32) -> String {
-    beam_search(&result.as_array(), beam_size, beam_cut_threshold).0
+    unsafe {
+        beam_search(&result.as_array(), beam_size, beam_cut_threshold).0
+    }
 }
 
 #[pymodule]
