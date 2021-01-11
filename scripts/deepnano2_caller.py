@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from ont_fast5_api.fast5_interface import get_fast5_file
+from ont_fast5_api.fast5_interface import get_fast5_file, check_file_type
 import argparse
 import os
 import numpy as np
@@ -25,29 +25,44 @@ def rescale_signal(signal):
     signal /= mad
     return signal
 
+def add_time_seconds(base_time_str, delta_seconds):
+    base_time = datetime.datetime.strptime(base_time_str, '%Y-%m-%dT%H:%M:%SZ')
+    base_time += datetime.timedelta(seconds=delta_seconds)
+    return base_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+
 def call_file(filename):
     out = []
     try:
         with get_fast5_file(filename, mode="r") as f5:
+            ftype = check_file_type(f5) # single-read/multi-read
             for read in f5.get_reads():
-                read_id = read.get_read_id()
+                read_id = read.read_id
+                run_id = read.run_id.decode('utf-8')
+                read_number = read.handle['Raw'].attrs['read_number'] if ftype == 'multi-read' else read.status.read_info[0].read_number
+                start_time = read.handle['Raw'].attrs['start_time'] if ftype == 'multi-read' else read.status.read_info[0].start_time
+                channel_number = read.handle[read.global_key + 'channel_id'].attrs['channel_number'].decode('utf-8') 
+                sampling_rate = read.handle[read.global_key + 'channel_id'].attrs['sampling_rate']
+                exp_start_time = read.handle[read.global_key + 'tracking_id'].attrs['exp_start_time'].decode('utf-8')
+
+                start_time = add_time_seconds(exp_start_time, start_time / sampling_rate)
+                
                 signal = read.get_raw_data()
                 signal = rescale_signal(signal)
 
                 basecall, qual = caller.call_raw_signal(signal)
-                out.append((read_id, basecall, qual))
+                out.append((read_id, run_id, read_number, channel_number, start_time, basecall, qual))
     except OSError:
         return []
     return out
 
-def write_output(read_id, basecall, quals, output_file, format):
+def write_output(read_id, run_id, read_num, channel_num, start_time, basecall, quals, output_file, format):
     if len(basecall) == 0:
         return
     if format == "fasta":
         print(">%s" % read_id, file=fout)
         print(basecall, file=fout)
     else: # fastq
-        print("@%s" % read_id, file=fout)
+        print("@%s runid=%s read=%d ch=%s start_time=%s" % (read_id, run_id, read_num, channel_num, start_time), file=fout)
         print(basecall, file=fout)
         print("+", file=fout)
         print(quals, file=fout)
@@ -109,8 +124,8 @@ if __name__ == '__main__':
         done = 0
         for fn in files:
             start = datetime.datetime.now()
-            for read_id, basecall, qual in call_file(fn):
-                write_output(read_id, basecall, qual, fout, args.output_format) 
+            for read_id, run_id, read_num, channel_num, start_time, basecall, qual in call_file(fn):
+                write_output(read_id, run_id, read_num, channel_num, start_time, basecall, qual, fout, args.output_format) 
                 done += 1
                 print("done %d/%d" % (done, len(files)), read_id, datetime.datetime.now() - start, file=sys.stderr)
 
@@ -118,10 +133,9 @@ if __name__ == '__main__':
         pool = Pool(args.threads)
         done = 0
         for out in pool.imap_unordered(call_file, files):
-            for read_id, basecall, qual in out:
-                write_output(read_id, basecall, qual, fout, args.output_format)
+            for read_id, run_id, read_num, channel_num, start_time, basecall, qual in out:
+                write_output(read_id, run_id, read_num, channel_num, start_time, basecall, qual, fout, args.output_format)
                 done += 1
                 print("done %d/%d" % (done, len(files)), read_id, file=sys.stderr)
     
     fout.close()
-
