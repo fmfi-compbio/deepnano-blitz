@@ -72,15 +72,22 @@ impl Caller {
             } else {
                 (PAD).min(out.shape()[0])
             };
-            let slice_end_pos = if start_pos + 3 * STEP + 6 * PAD >= raw_data.len() {
-                out.shape()[0]
-            } else {
-                out.shape()[0] - PAD
-            };
+            let slice_end_pos = out.shape()[0] - PAD;
 
             to_stack.push(out.slice(s![slice_start_pos..slice_end_pos, ..]).to_owned());
 
             start_pos += 3 * STEP;
+        }
+        // last chunk
+        {
+            let signal_start_pos = raw_data.len() - (STEP * 3 + PAD * 6);
+            let expected_start_pos = start_pos;
+            let chunk = &raw_data[signal_start_pos..];
+            let out = self.net.predict(chunk);
+            
+            let slice_start_pos = (expected_start_pos - signal_start_pos) / 3 + PAD; 
+            to_stack.push(out.slice(s![slice_start_pos.., ..]).to_owned());
+
         }
 
         if to_stack.len() == 0 {
