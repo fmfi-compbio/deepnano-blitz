@@ -157,10 +157,18 @@ fn beam_search_py(result: &PyArray2<f32>, beam_size: usize, beam_cut_threshold: 
     }
 }
 
+#[pyfunction]
+fn beam_search_with_quals(result: &PyArray2<f32>, beam_size: usize, beam_cut_threshold: f32) -> (String, String) {
+    unsafe {
+        beam_search(&result.as_array(), beam_size, beam_cut_threshold)
+    }
+}
+
 #[pymodule]
 fn deepnano2(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Caller>()?;
     m.add_wrapped(wrap_pyfunction!(beam_search_py))?;
+    m.add_wrapped(wrap_pyfunction!(beam_search_with_quals))?;
 
     Ok(())
 }
